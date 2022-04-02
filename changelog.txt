@@ -1,0 +1,12 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.1153
+Date: 2022-02-05
+
+  Features:
+    - Build blueprint strings (optionally only parts the player has researched)
+    - Build ghosts (optionally only parts the player has researched)
+    - Repair entities
+    - Cancel research
+    - Advance research
+    - Disable research
+    - Enable research

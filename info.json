@@ -1,0 +1,11 @@
+{
+  "name": "silent-integration-helper",
+  "title": "Integration Helper",
+  "version": "0.1.1154",
+  "author": "Sil3ntSt0rm",
+  "contact": "",
+  "homepage": "https://github.com/Sil3ntStorm/factorio-explosive-trees",
+  "factorio_version": "1.1",
+  "dependencies": ["base >= 1.1", "flib >= 0.9.2"],
+  "description": "Provides some helper functionality for integration, as to reduce complexity of integration scripts"
+}
