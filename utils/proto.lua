@@ -4,9 +4,17 @@ function proto.get_entity_prototypes()
     local result = game.get_filtered_entity_prototypes({{filter='buildable'}, {filter='minable', mode='and'}, {filter='flag', flag='placeable-player', mode='and'}})
     local ret = {}
     for name, _ in pairs(result) do
-        table.insert(ret, name)
+        ret[name] = true
     end
-    return ret
+    result = game.get_filtered_entity_prototypes({{filter='flag', flag='placeable-player', mode='or'}, {filter='flag', flag='player-creation', mode='or'}, {filter='type', type='corpse', mode='and', invert=true}})
+    for name, _ in pairs(result) do
+        ret[name] = true
+    end
+    local rval = {}
+    for name, _ in pairs(ret) do
+        table.insert(rval, name)
+    end
+    return rval
 end
 
 return proto

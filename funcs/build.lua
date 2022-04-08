@@ -7,6 +7,8 @@ local research = require('funcs/research_tree')
 local constants = require('constants')
 local config = require('utils/config')
 local strutil = require('utils/string_replace')
+local proto = require('utils/proto')
+local fml = require('utils/lua_is_stupid')
 
 local function createResearchedGhosts(entities, chance, ignore_tech)
     local count = 0
@@ -58,7 +60,7 @@ end
 
 build.build_ghosts = function(surface, force, position, range, chance, ignore_tech, include_remnants)
     if not surface or not force or not position then
-        game.print('Invalid input parameters. Surface, Force, Position are required')
+        game.print('Invalid input parameters. Surface, Force, Position are required', constants.error)
         return
     end
     if ignore_tech == nil then
@@ -75,31 +77,39 @@ build.build_ghosts = function(surface, force, position, range, chance, ignore_te
     chance = chance or 75
     local count = createResearchedGhosts(surface.find_entities_filtered{name='entity-ghost', radius=range, position=position, force=force}, chance, ignore_tech)
     local corpses = surface.find_entities_filtered{type='corpse', radius=range, position=position}
+    local validTypes = proto.get_entity_prototypes()
     for _, corpse in pairs(corpses) do
-        if string.sub(corpse.name, -8) == 'remnants' and (ignore_tech or research.can_build(force, string.sub(corpse.name, 1, -10))) then
-            local res = surface.create_entity{
-                name = string.sub(corpse.name, 1, -10),
-                position = corpse.position,
-                direction = corpse.direction,
-                raise_built = true,
-                move_stuck_players = true,
-                force = force
-            }
-            if res then
-                count = count + 1
+        if corpse.valid then
+            local toBuild = string.sub(corpse.name, 1, -10)
+            local isValidType = fml.contains(validTypes, toBuild)
+            if not isValidType then
+                log('Type ' .. toBuild .. ' is not listed in valid entities: ' .. serpent.line(validTypes))
+            end
+            if math.random(1, 100) <= chance and string.sub(corpse.name, -8) == 'remnants' and (ignore_tech or research.can_build(force, toBuild)) and isValidType then
+                local res = surface.create_entity{
+                    name = toBuild,
+                    position = corpse.position,
+                    direction = corpse.direction,
+                    raise_built = true,
+                    move_stuck_players = true,
+                    force = force
+                }
+                if res then
+                    count = count + 1
+                end
             end
         end
     end
 
-    if count > 0 and #config['msg-build-ghost'] > 0 then
-        force.print(strutil.replace_variables(config['msg-build-ghost'], {count}), constants.good)
+    if #config['msg-build-ghost'] > 0 then
+        force.print(strutil.replace_variables(config['msg-build-ghost'], {count}), count > 0 and constants.good or constants.neutral)
     end
 
 end
 
 build.repair_base = function(surface, force, position, range, chance, min_gain, max_gain)
     if not surface or not force or not position then
-        game.print('Invalid input parameters. Surface, Force, Position are required')
+        game.print('Invalid input parameters. Surface, Force, Position are required', constants.error)
         return
     end
     range = range or 15
@@ -127,7 +137,7 @@ end
 
 build.build_blueprint = function(surface, force, position, bp_string, ignore_tech)
     if not surface or not force or not position or not bp_string or #bp_string < 10 then
-        game.print('Invalid input parameters. Surface, Force, Position, Blueprint are required')
+        game.print('Invalid input parameters. Surface, Force, Position, Blueprint are required', constants.error)
         return
     end
     if ignore_tech == nil then
@@ -137,7 +147,7 @@ build.build_blueprint = function(surface, force, position, bp_string, ignore_tec
     end
     local bp = surface.create_entity{name='item-on-ground', position=position, stack='blueprint'}
     if bp.stack.import_stack(bp_string) == 1 then
-        game.print('Invalid Blueprint')
+        game.print('Invalid Blueprint', constants.error)
         bp.destroy()
         return
     end
@@ -160,7 +170,7 @@ end
 
 function build.deconstruct(surface, force, position, range, chance, max_count, ignore_tech)
     if not surface or not force then
-        game.print('Invalid input parameters. Surface and Force are required')
+        game.print('Invalid input parameters. Surface and Force are required', constants.error)
         return
     end
     range = range or 500

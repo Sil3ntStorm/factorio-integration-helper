@@ -247,6 +247,42 @@ data:extend({
         default_value = 'Barrage has ended'
     },
     {
+        name = 'sil-ihlp-msg-player-dump-inventory',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gf',
+        default_value = '__1__ has come down with a serious case of diarrhea and seems to displace their inventory over __2__ tiles (__3__ seconds)'
+    },
+    {
+        name = 'sil-ihlp-msg-player-dump-inventory-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gf',
+        default_value = '__1__ is feeling better again. They lost __2__ items'
+    },
+    {
+        name = 'sil-ihlp-msg-player-cancel-handcraft',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gg',
+        default_value = '__1__ apparently does not need any of the __2__ items they were crafting'
+    },
+    {
+        name = 'sil-ihlp-msg-player-start-handcraft',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gh',
+        default_value = '__1__ decided they urgently need __2__ __3__'
+    },
+    {
         name = 'sil-ihlp-teleport-delay',
         type = 'int-setting',
         setting_type = 'runtime-global',

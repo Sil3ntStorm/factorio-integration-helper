@@ -70,7 +70,7 @@ end
 
 function research.start_research(force, chance)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
@@ -101,7 +101,7 @@ end
 
 function research.cancel_research(force, chance)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
@@ -119,7 +119,7 @@ end
 
 function research.advance_research(force, chance, percent)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 75
@@ -149,7 +149,7 @@ end
 
 function research.disable_research(force, chance, seconds)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
@@ -176,7 +176,7 @@ end
 
 function research.enable_research(force, chance, queue, enable_queue)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
@@ -196,7 +196,7 @@ end
 
 function research.change_speed(force, boost, chance, duration)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 75
@@ -247,7 +247,7 @@ end
 
 function research.set_arti_range(force, levels, chance, duration)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
@@ -274,7 +274,7 @@ end
 
 function research.set_arti_speed(force, levels, chance, duration)
     if not force then
-        game.print('Force is required')
+        game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50

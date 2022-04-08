@@ -7,5 +7,6 @@ local constants = {}
 constants.bad = {r = 0.8, g = 0, b = 0}
 constants.neutral = {r = 0.7, g = 0.7, b = 0}
 constants.good = {r = 0, g = 1, b = 0}
+constants.error = {r = 0.7, g = 0, b = 0.7}
 
 return constants

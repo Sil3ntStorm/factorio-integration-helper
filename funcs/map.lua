@@ -8,6 +8,7 @@ local config = require('utils/config')
 local strutil = require('utils/string_replace')
 local constants = require('constants')
 local proto = require('utils/proto')
+local fml = require('utils/lua_is_stupid')
 
 function map.getDistance(pos, tgt)
     local x = (tgt.x - pos.x) ^ 2
@@ -69,7 +70,7 @@ end
 
 function map.teleport_random(player, target_surface, distance)
     if not player or not target_surface or not distance then
-        game.print('Missing parameters: player, target_surface, distance are required')
+        game.print('Missing parameters: player, target_surface, distance are required', constants.error)
         return
     end
     local dest = map.getRandomPositionInRealDistance(player.position, distance)
@@ -77,7 +78,7 @@ function map.teleport_random(player, target_surface, distance)
 end
 
 function map.teleport_delay(player, target_surface, distance, seconds)
-    game.print('not implemented')
+    game.print('not implemented', constants.error)
 end
 
 function map.timed_teleport(player, target_surface, position, seconds)
@@ -91,9 +92,9 @@ function map.timed_teleport(player, target_surface, position, seconds)
     on_tick_n.add(game.tick + 60, task)
 end
 
-function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target)
+function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing)
     if not surface or not position or not item then
-        game.print('surface, position and item are required')
+        game.print('surface, position and item are required', constants.error)
         return
     end
     count = count or 1
@@ -103,6 +104,9 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     position_range = position_range or 80
     if randomize_target ~= false and randomize_target ~= true then
         randomize_target = true
+    end
+    if homing ~= false and homing ~= true then
+        homing = true
     end
 
     local origTgtPos = {}
@@ -118,16 +122,20 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
             name = item,
             position = srcPos,
             source_position = srcPos,
-            target = origTgtPos,
+            target = homing and target or origTgtPos,
             speed = 0.5,
-            max_range = 10
+            max_range = map.getDistance(origTgtPos, srcPos) * 1.25
         }
     end
 
     if count > 1 then
         for i = 1, count do
             if math.random(1, 100) <= chance then
-                local tgtPos = randomize_target and map.getRandomPosInRange(origTgtPos, target_range) or origTgtPos
+                local tgtPos = randomize_target and map.getRandomPosInRange(origTgtPos, target_range) or (homing and target or origTgtPos)
+                local tgtPos2 = tgtPos
+                if tgtPos2.position then
+                    tgtPos2 = tgtPos2.position
+                end
                 local srcPos2 = map.getRandomPosInRange(srcPos, 5 + count)
                 surface.create_entity{
                     name = item,
@@ -135,7 +143,7 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
                     source_position = srcPos2,
                     target = tgtPos,
                     speed = 0.5,
-                    max_range = target_range * 2
+                    max_range = math.max(target_range * 2, map.getDistance(tgtPos2, srcPos2) * 1.25)
                 }
             end
         end
@@ -144,7 +152,7 @@ end
 
 function map.reset_assembler(surface, force, position, range, chance, max_count)
     if not surface or not force then
-        game.print('Invalid input parameters. Surface and Force are required')
+        game.print('Invalid input parameters. Surface and Force are required', constants.error)
         return
     end
     range = range or 500
@@ -169,7 +177,6 @@ function map.reset_assembler(surface, force, position, range, chance, max_count)
     local count = 0
     for _, e in pairs(actual) do
         if count < max_count and math.random(1, 1000) <= chance then
-            -- force.print('Reset ' .. e.name .. ' at [gps=' .. e.position.x .. ',' .. e.position.y .. '] doing ' .. e.get_recipe().name)
             local items = e.set_recipe(nil)
             for item, cnt in pairs(items) do
                 surface.spill_item_stack(e.position, {name=item, count=cnt}, false)
@@ -207,7 +214,7 @@ end
 
 function map.enemy_artillery(surface, force, position, range, max, chance)
     if not surface or not force then
-        game.print('surface and force are required')
+        game.print('surface and force are required', constants.error)
         return
     end
     position = position or {x=0, y=0}
@@ -235,7 +242,8 @@ end
 
 function map.remove_entities(surface, force, position, range, name, max, chance)
     if not surface or not force then
-        game.print('surface and force are required')
+        game.print('surface and force are required', constants.error)
+        return
     end
     position = position or {x = 0, y = 0}
     range = range or math.random(50, 200)
@@ -244,8 +252,7 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
 
     local function rndItem()
         local names = proto.get_entity_prototypes()
-        local idx = math.random(1, #names)
-        game.print('selected index ' .. idx .. ' which is ' .. names[idx])
+        local idx = math.random(1, fml.actual_size(names))
         return names[idx]
     end
     local allowRandom = false
@@ -257,7 +264,6 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
     chance = math.max(0, math.min(chance, 100))
     local found = surface.find_entities_filtered{name=name, force=force, radius=range, position=position}
     local lp = 1
-    game.print('Found ' .. #found .. ' entities for ' .. name)
     while allowRandom and #found == 0 and lp < 50 do
         name = rndItem()
         found = surface.find_entities_filtered{name=name, force=force, radius=range, position=position}

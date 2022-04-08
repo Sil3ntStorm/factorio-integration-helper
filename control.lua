@@ -105,7 +105,12 @@ local function onTick(event)
                 task['lastPos'] = task.player.position
                 task['executed'] = game.tick
             end
-            task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
+            if task.player.character then
+                task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
+            else
+                -- player dead, try again in 20 ticks
+                task['nthTick'] = 20
+            end
             if task.lastTick - task.nthTick >= game.tick then
                 on_tick_n.add(game.tick + task.nthTick, task)
             end
@@ -115,12 +120,12 @@ local function onTick(event)
         elseif task.action == 'reset_arti_range' then
             task.force.artillery_range_modifier = task.force.artillery_range_modifier - task.added
         elseif task.action == 'spawn_explosive' then
-            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range)
+            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
             task.count = task.count - 1
             if task.count > 0 then
                 on_tick_n.add(game.tick + task.delay, task)
-            elseif #config['msg-barrage-end'] > 0 then
-                task.player.force.print(config['msg-barrage-end'], constants.good)
+            elseif #config['msg-player-barrage-end'] > 0 then
+                task.player.force.print(config['msg-player-barrage-end'], constants.good)
             end
         elseif task.action == 'restore_lab_speed' then
             task.force.laboratory_speed_modifier = task.force.laboratory_speed_modifier - task.added
@@ -134,8 +139,12 @@ local function onTick(event)
             end
         elseif task.action == 'dump_inventory' then
             fn_player.dump_inventory_impl(task.player, task.range, task.chance, task.end_tick, task.dropped)
+        elseif task.action == 'cancel_handcraft' then
+            fn_player.cancel_handcraft_impl(task)
+        elseif task.action == 'start_handcraft' then
+            fn_player.start_handcraft_impl(task)
         else
-            game.print('WARNING! Event ' .. task.action .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.bad)
+            game.print('WARNING! Event ' .. task.action .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
     end
 end
@@ -204,8 +213,10 @@ local function help()
     modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 10 - 80, chance (80)
-    barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds), chance (90)
-    dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop)
+    barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds), chance (90), homing (true) valid values: [true, false], random_target (true) valid values: [true, false]
+    dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
+    cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), countdown (false) valid values [true, false]
+    start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
     ]])
 end
 
@@ -235,6 +246,8 @@ local function onLoad()
         on_fire=fn_player.on_fire,
         barrage=fn_player.barrage,
         dump_inv=fn_player.dump_inventory,
+        cancel_hand_craft=fn_player.cancel_handcraft,
+        start_hand_craft=fn_player.start_handcraft,
         help=help
     })
 end
