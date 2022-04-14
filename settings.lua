@@ -121,13 +121,31 @@ data:extend({
         default_value = '__1__ buildings were deconstructed'
     },
     {
+        name = 'sil-ihlp-msg-map-teleport-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'faa',
+        default_value = 'Teleporting __1__ in __2__ seconds'
+    },
+    {
         name = 'sil-ihlp-msg-map-teleport-player',
         type = 'string-setting',
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'fa',
+        order = 'fab',
         default_value = '__1__ just got teleported __2__ tiles from __3__ to __4__'
+    },
+    {
+        name = 'sil-ihlp-msg-map-teleport-fail',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fac',
+        default_value = 'Failed to find a suitable target position for __1__ on __2__. Aborting teleportation'
     },
     {
         name = 'sil-ihlp-msg-map-reset-assembler',
@@ -281,6 +299,42 @@ data:extend({
         allow_blank = true,
         order = 'gh',
         default_value = '__1__ decided they urgently need __2__ __3__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-naked-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gi',
+        default_value = '__1__ is losing all protection in __2__ seconds (for __3__ seconds)'
+    },
+    {
+        name = 'sil-ihlp-msg-player-naked',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gj',
+        default_value = '__1__ will have to live without their most valued treasures for __2__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-naked-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gk',
+        default_value = '__1__ found their lost treasures'
+    },
+    {
+        name = 'sil-ihlp-msg-player-naked-end-ground',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gk',
+        default_value = '__1__ treasures have been spotted within __2__ meters around their location'
     },
     {
         name = 'sil-ihlp-teleport-delay',

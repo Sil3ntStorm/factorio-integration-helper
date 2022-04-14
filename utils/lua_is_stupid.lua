@@ -21,4 +21,14 @@ function properLanguagePlease.contains(tbl, val)
     return false
 end
 
+function properLanguagePlease.include(file)
+    properLanguagePlease.loading = properLanguagePlease.loading or {}
+    if not properLanguagePlease.loading[file] then
+        properLanguagePlease.loading[file] = true
+        local x = require(file)
+        properLanguagePlease.loading[file] = nil
+        return x
+    end
+end
+
 return properLanguagePlease

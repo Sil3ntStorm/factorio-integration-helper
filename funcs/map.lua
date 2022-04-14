@@ -4,11 +4,12 @@
 
 local map = {}
 local on_tick_n = require('__flib__.on-tick-n')
-local config = require('utils/config')
-local strutil = require('utils/string_replace')
-local constants = require('constants')
-local proto = require('utils/proto')
 local fml = require('utils/lua_is_stupid')
+local config = fml.include('utils/config')
+local strutil = fml.include('utils/string_replace')
+local constants = fml.include('constants')
+local proto = fml.include('utils/proto')
+local tp = fml.include('funcs/teleport')
 
 function map.getDistance(pos, tgt)
     local x = (tgt.x - pos.x) ^ 2
@@ -44,52 +45,71 @@ function map.getRandomPositionInRealDistance(pos, distance)
     return {x=x, y=y}
 end
 
---
-
-function map.teleport_single(player, target_surface, position)
-    local chunkPos = {x = position.x / 32, y = position.y / 32}
-    if (not target_surface.is_chunk_generated(chunkPos)) then
-        target_surface.request_to_generate_chunks(position, 2)
-        target_surface.force_generate_chunk_requests()
+function map.set_equipment_for_item_on_ground(item_on_ground, equip)
+    -- Should be moved out of here maybe?
+    if not item_on_ground.stack.grid then
+        item_on_ground.stack.create_grid()
     end
-    local task = {}
-    task['action'] = 'teleport_player'
-    task['surface'] = target_surface
-    task['player'] = player
-    task['position'] = position
-    if not global.silinthlp_teleport then
-        global.silinthlp_teleport = {}
+    for _, eq in pairs(equip) do
+        item_on_ground.stack.grid.put{name = eq.name, position = eq.position}
     end
-    if not global.silinthlp_teleport[player.name] then
-        global.silinthlp_teleport[player.name] = 1
-    else
-        global.silinthlp_teleport[player.name] = global.silinthlp_teleport[player.name] + 1
-    end
-    on_tick_n.add(game.tick + config['teleport-delay'], task)
 end
+
+--
 
 function map.teleport_random(player, target_surface, distance)
     if not player or not target_surface or not distance then
         game.print('Missing parameters: player, target_surface, distance are required', constants.error)
         return
     end
-    local dest = map.getRandomPositionInRealDistance(player.position, distance)
-    map.teleport_single(player, target_surface, dest)
+    local task = {}
+    task['action'] = 'find_teleport_location'
+    task['player'] = player
+    task['dest_surface'] = target_surface
+    task['distance'] = distance
+    task['next_action'] = 'teleport_player'
+
+    on_tick_n.add(game.tick + 1, task)
 end
 
-function map.teleport_delay(player, target_surface, distance, seconds)
-    game.print('not implemented', constants.error)
+function map.timed_teleport_random(player, target_surface, distance, seconds)
+    if not player or not target_surface or not distance then
+        game.print('Missing parameters: player, target_surface, distance are required', constants.error)
+        return
+    end
+    seconds = seconds or math.random(1, 10)
+
+    local task = {}
+    task['action'] = 'teleport_delay'
+    task['player'] = player
+    task['dest_surface'] = target_surface
+    task['delay'] = seconds - 1
+    task['distance'] = distance
+
+    on_tick_n.add(game.tick + 60, task)
+    if #config['msg-map-teleport-countdown'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, seconds}), constants.neutral)
+    end
 end
 
 function map.timed_teleport(player, target_surface, position, seconds)
+    if not player or not target_surface or not position then
+        game.print('Missing parameters: player, target_surface, position are required', constants.error)
+        return
+    end
+    seconds = seconds or math.random(1, 10)
+
     local task = {}
     task['action'] = 'teleport_delay'
-    task['surface'] = target_surface
+    task['dest_surface'] = target_surface
     task['player'] = player
     task['position'] = position
-    task['delay'] = seconds
+    task['delay'] = seconds - 1
 
     on_tick_n.add(game.tick + 60, task)
+    if #config['msg-map-teleport-countdown'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, seconds}), constants.neutral)
+    end
 end
 
 function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing)

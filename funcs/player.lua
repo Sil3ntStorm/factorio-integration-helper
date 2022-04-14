@@ -81,7 +81,7 @@ function player.modify_craft_speed(player_, modifier, duration, chance)
         return
     end
 
-    local original = player.character_crafting_speed_modifier
+    local original = player_.character_crafting_speed_modifier
 
     local task = {}
     task['action'] = 'restore_crafting_speed'
@@ -205,23 +205,56 @@ end
 
 function player.dump_inventory_stack(player_, item, range, do_pickup)
     if not player_ or not player_.character or not item or not range then
+        game.print('no player / character / item / range')
         return nil
     end
     
     local inv = player_.get_main_inventory()
     if not inv then
+        game.print('no inv')
         return nil
     end
     
     local stack = inv.find_item_stack(item)
     if not stack then
+        game.print('no stack')
         return nil
     end
 
     local count = stack.count
     for i = 1, count do
         local pos = map.getRandomPosInRange(player_.position, range)
-        player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil)
+        local ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
+        while not ent or #ent < 1 do
+            pos = map.getRandomPosInRange(player_.position, range)
+            ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
+        end
+        if stack.type == 'blueprint' or stack.type == 'blueprint-book' or stack.type == 'deconstruction-item' or stack.type == 'upgrade-item' or stack.type == 'item-with-tags' then
+            -- just returning nil/empty string for stuff that cannot be exported would have been too complicated I guess...
+            local export = stack.export_stack()
+            if #export > 0 and #ent > 0 then
+                ent[1].stack.import_stack(export)
+            end
+        elseif stack.grid then
+            -- copy equipment grid (e.g. spidertron / armor in inv)
+            map.set_equipment_for_item_on_ground(ent[1], stack.grid.equipment)
+        end
+        -- Since Factorio insists on having properties on generic entities
+        -- that only exists on very few, specific instances of them
+        -- while hard erroring when attempting to check / set them, rather
+        -- than just accepting / returning nil values...
+        if stack.health then
+            ent[1].stack.health = stack.health
+        end
+        if stack.type == 'ammunition' and stack.ammo then
+            ent[1].stack.ammo = stack.ammo
+        end
+        if stack.type == 'item-with-tags' and stack.tags then
+            ent[1].stack.tags = stack.tags
+        end
+        if stack.durability then
+            ent[1].stack.durability = stack.durability
+        end
     end
     inv.remove(stack)
     return count
@@ -425,6 +458,7 @@ function player.start_handcraft(player_, item, count, chance, delay)
     task['player'] = player_
     task['chance'] = chance
     task['count'] = count
+    task['item'] = item
     task['start_tick'] = game.tick + delay * 60
 
     if delay > 0 then
@@ -432,7 +466,140 @@ function player.start_handcraft(player_, item, count, chance, delay)
     else
         player.start_handcraft_impl(task)
     end
+end
 
+function player.get_equipment_grid_content(item_stack)
+    local equip = {}
+    if not item_stack.grid then
+        return equip
+    end
+    for _, eq in pairs(item_stack.grid.equipment) do
+        table.insert(equip, {name = eq.name, position = eq.position})
+    end
+    return equip
+end
+
+function player.get_naked_impl(task, do_print)
+    if not task.player or not task.player.valid or not task.player.connected then
+        game.print('Player died or disconnected', constants.error)
+        return
+    end
+    local armor_inv = task.player.get_inventory(defines.inventory.character_armor)
+    local main_inv = task.player.get_main_inventory()
+    local task_dress = {}
+    task_dress['action'] = 'dress_player'
+    task_dress['player'] = task.player
+    task_dress['distance'] = task.distance
+    task_dress['origin'] = 'naked'
+    local worn_armor = {}
+    if not armor_inv.is_empty() then
+        local equip = player.get_equipment_grid_content(armor_inv[1])
+        worn_armor['name'] = armor_inv[1].name
+        worn_armor['equipment'] = equip
+
+        global.silinthlp_naked = global.silinthlp_naked or {}
+        global.silinthlp_naked[task.player.name] = global.silinthlp_naked[task.player.name] or {name = '', equipment = {}}
+        global.silinthlp_naked[task.player.name].name = armor_inv[1].name
+        global.silinthlp_naked[task.player.name].equipment = equip
+
+        if task.duration == 0 then
+            local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
+            local ent = task.player.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
+            map.set_equipment_for_item_on_ground(ent[1], equip)
+        end
+        armor_inv.remove(armor_inv[1])
+    end
+    local extra_armor = {}
+    for name, count in pairs(main_inv.get_contents()) do
+        local stack = main_inv.find_item_stack(name)
+        if stack.type == 'armor' then
+            local equip = player.get_equipment_grid_content(stack)
+            table.insert(extra_armor, {name = stack.name, equipment = equip})
+            if task.duration == 0 then
+                local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
+                local ent = task.player.surface.spill_item_stack(pos, {name = stack.name, count = 1}, false, nil)
+                map.set_equipment_for_item_on_ground(ent[1], equip)
+            end
+            main_inv.remove(stack)
+        end
+    end
+    task_dress['worn'] = worn_armor
+    task_dress['extra'] = extra_armor
+    if task.duration > 0 then
+        on_tick_n.add(game.tick + task.duration * 60, task_dress)
+    end
+    if do_print then
+        if #config['msg-player-naked'] > 0 and task.duration > 0 then
+            task.player.force.print(strutil.replace_variables(config['msg-player-naked'], {task.player.name, task.duration}), constants.bad)
+        elseif #config['msg-player-naked-end-ground'] > 0 and task.duration == 0 then
+            task.player.force.print(strutil.replace_variables(config['msg-player-naked-end-ground'], {task.player.name, task.distance}), constants.neutral)
+        end
+    end
+end
+
+function player.get_naked(player_, delay, distance, duration)
+    if not player_ or not player_.character then
+        game.print('Missing parameters: player is required and player must be alive', constants.error)
+        return
+    end
+
+    delay = delay or 0
+    distance = distance or math.random(50, 100)
+    duration = duration or math.random(2, 10)
+
+    distance = math.abs(distance)
+    duration = math.max(0, duration)
+
+    local task = {}
+    task['action'] = 'get_naked'
+    task['player'] = player_
+    task['delay'] = delay
+    task['distance'] = distance
+    task['duration'] = duration
+    task['end_tick'] = game.tick + delay * 60 + duration * 60
+
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        player.get_naked_impl(task, true)
+    end
+end
+
+function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave_on_ground)
+    if not player_ then
+        return
+    end
+    local inv = nil
+    if as_active_armor then
+        inv = player_.get_inventory(defines.inventory.character_armor)
+    else
+        inv = player_.get_main_inventory()
+    end
+    if not inv then
+        return
+    end
+    -- Create as an on ground item, since we cannot create a proper item stack
+    -- or detect where our item got inserted into the inventory. The player
+    -- may already have an item of the type we are inserting, so there is no
+    -- way to apply equipment to the correct item otherwise.
+    pos = pos or map.getRandomPosInRange(player_.position, 10)
+    local ent = player_.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
+    if #ent > 0 then
+        map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment)
+        if not leave_on_ground and (inv.can_insert(armor_spec.name) or as_active_armor) then
+            if not inv.can_insert(armor_spec.name) then
+                local inserted = player_.get_main_inventory().insert(inv[1])
+                if inserted == 0 then
+                    -- No space in main inventory drop old armor
+                    local old = task.player.surface.spill_item_stack(pos, {name=inv[1].name, count=1}, false, nil)
+                    map.set_equipment_for_item_on_ground(old[1], player.get_equipment_grid_content(inv[1]))
+                end
+                inv.remove(inv[1].name)
+            end
+            inv.insert(ent[1].stack)
+            ent[1].destroy()
+        end
+    end
 end
 
 return player

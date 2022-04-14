@@ -11,6 +11,7 @@ local map = require('funcs/map')
 local fn_player = require('funcs/player')
 local config = require('utils/config')
 local strutil = require('utils/string_replace')
+local tp = require('funcs/teleport')
 local on_tick_n = require('__flib__.on-tick-n')
 
 local function onTick(event)
@@ -22,74 +23,30 @@ local function onTick(event)
     for _, task in pairs(list) do
         if task.action == 'enable_research' then
             research.enable_research(task.force, 100, task.queue, task.has_queue)
+        elseif task.action == 'find_teleport_location' then
+            tp.findRandomTeleportLocationForPlayer(task)
         elseif task.action == 'teleport_player' then
             if not global.silinthlp_teleport[task.player.name] then
                 return
             end
-            local tile = task.surface.get_tile(task.position)
-            local distance = map.getDistance(task.player.position, task.position)
-            local attempts = global.silinthlp_teleport[task.player.name]
-
-            local player_prototype = task.player.character.prototype
-            if task.player.vehicle then
-                player_prototype = task.player.vehicle.prototype
-            end
-            local size = math.ceil(math.abs(player_prototype.collision_box.left_top.x) + math.abs(player_prototype.collision_box.right_bottom.x))
-
-            local do_tp = function(player, dest, surface)
-                local oldPos = player.position
-                if player.vehicle then
-                    player.vehicle.teleport(dest, surface)
-                else
-                    player.teleport(dest, surface)
-                end
-                global.silinthlp_teleport[player.name] = nil
-                if #config['msg-map-teleport-player'] > 0 then
-                    player.force.print(strutil.replace_variables(config['msg-map-teleport-player'], {player.name, math.floor(distance + 0.5), '[gps=' .. math.floor(oldPos.x + 0.5) .. ',' .. math.floor(oldPos.y + 0.5) .. ']', '[gps=' .. math.floor(dest.x + 0.5) .. ',' .. math.floor(dest.y + 0.5) .. ']'}))
-                end
-            end
-            local do_fallback = function()
-                if global.silinthlp_teleport[task.player.name] < config['teleport-attempts'] then
-                    map.teleport_random(task.player, task.surface, distance)
-                else
-                    local pos = task.surface.find_non_colliding_position(player_prototype.name, task.position, 50, size)
-                    if pos then
-                        do_tp(task.player, pos, task.surface)
-                    else
-                        task.player.print('Failed to find suitable teleport target. Aborted teleport.')
-                    end
-                end
-            end
-
-            if not tile.collides_with('player-layer') then
-                local pos = task.position
-                local orig = '[gps=' .. pos.x .. ', ' .. pos.y .. ']'
-                if not task.surface.can_place_entity{name=player_prototype.name, position=task.position, force=task.player.force} then
-                    pos = task.surface.find_non_colliding_position(player_prototype.name, task.position, 10, size)
-                end
-                if pos and task.surface.can_place_entity{name=player_prototype.name, position=pos, force=task.player.force} then
-                    do_tp(task.player, pos, task.surface)
-                else
-                    do_fallback(task, distance)
-                end
-            else
-                do_fallback(task, distance)
-            end
+            tp.actualTeleport(task.player, task.dest_surface, tp.getTeleportDestinationForPlayer(task.player, task.dest_surface))
         elseif task.action == 'teleport_delay' then
             if task.delay == 0 then
-                -- TODO: Use safe teleportation
-                local oldPos = task.player.position
-                local dest = task.position
-                if task.player.vehicle then
-                    task.player.vehicle.teleport(dest, task.surface)
+                local pos = nil
+                if task.position then
+                    -- fixed teleport
+                    tp.actualTeleport(task.player, task.dest_surface, task.position)
                 else
-                    task.player.teleport(dest, task.surface)
-                end
-                if #config['msg-map-teleport-player'] > 0 then
-                    task.player.force.print(strutil.replace_variables(config['msg-map-teleport-player'], {task.player.name, math.floor(map.getDistance(oldPos, dest) + 0.5), '[gps=' .. math.floor(oldPos.x + 0.5).. ',' .. math.floor(oldPos.y + 0.5) .. ']', '[gps=' .. dest.x .. ',' .. dest.y .. ']'}))
+                    -- Random teleport
+                    task.action = 'find_teleport_location'
+                    task.next_action = 'teleport_player'
+                    on_tick_n.add(game.tick + 1, task)
                 end
             else
-                task.player.force.print('Teleporting ' .. task.player.name .. ' in ' .. task.delay .. ' seconds...')
+                if #config['msg-map-teleport-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, task.delay})
+                    rendering.draw_text{text = msg, surface = task.player.surface, target = task.player.character, time_to_live = 60, forces = {task.player.force}, color = constants.neutral, scale_with_zoom = true, alignment = 'center', target_offset={0, -2.5}}
+                end
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
@@ -129,8 +86,8 @@ local function onTick(event)
             end
         elseif task.action == 'restore_lab_speed' then
             task.force.laboratory_speed_modifier = task.force.laboratory_speed_modifier - task.added
-            if #config['msg-'] > 0 then
-                task.force.print()
+            if #config['msg-research-lab-speed-end'] > 0 then
+                task.force.print(strutil.replace_variables(config['msg-research-lab-speed-end'], {task.force.name}))
             end
         elseif task.action == 'disable_biter_revive' then
             global.silinthlp_biter_revive = nil
@@ -143,8 +100,33 @@ local function onTick(event)
             fn_player.cancel_handcraft_impl(task)
         elseif task.action == 'start_handcraft' then
             fn_player.start_handcraft_impl(task)
+        elseif task.action == 'get_naked' then
+            if task.delay == 0 then
+                fn_player.get_naked_impl(task, true)
+            else
+                if #config['msg-player-naked-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-naked-countdown'], {task.player.name, task.delay, task.duration})
+                    rendering.draw_text{text = msg, surface = task.player.surface, target = task.player.character, time_to_live = 60, forces = {task.player.force}, color = constants.bad, scale_with_zoom = true, alignment = 'center', target_offset={0, -2.5}}
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
+        elseif task.action == 'dress_player' then
+            local pos = map.getRandomPosInRange(task.player.position, task.distance or 20)
+            fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0)
+            for _, a in pairs(task.extra) do
+                pos = map.getRandomPosInRange(task.player.position, task.distance or 20)
+                fn_player.give_armor_impl(task.player, a, pos, false, task.distance > 0)
+            end
+            if task.origin == 'naked' then
+                if #config['msg-player-naked-end-ground'] > 0 and task.distance > 0 then
+                    task.player.force.print(strutil.replace_variables(config['msg-player-naked-end-ground'], {task.player.name, task.distance}), constants.neutral)
+                elseif #config['msg-player-naked-end'] > 0 and task.distance == 0 then
+                    task.player.force.print(strutil.replace_variables(config['msg-player-naked-end'], {task.player.name}), constants.good)
+                end
+            end
         else
-            game.print('WARNING! Event ' .. task.action .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
+            game.print('WARNING! Event ' .. (task.action and task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
     end
 end
@@ -205,7 +187,8 @@ local function help()
     set_arti_range: force, levels Valid range: 1 to 21, chance (50), duration (random 60 - 180)
     set_lab_speed: force, percent change (random 1 - 100 5% chance to be negative) Valid range: -100 to 100, chance (75), duration (random 10 - 180)
     teleport_distance: player, destination surface, distance
-    teleport_delay: player, target_surface, position, seconds
+    teleport_delay: player, target_surface, position, seconds (random 1 - 10)
+    teleport_delay_distance: player, target_surface, distance, seconds (random 1 - 10)
     enemy_arty: surface, force, position (0,0), range (random 500 - 5000), max (random 1 - 10), chance (random 10 - 100)
     remove_entity: surface, force, position (0, 0), range (random 40 - 200), entity name (randomly selected), max (random 5 - 20), chance (random 10 - 100)
     reset_recipe: surface, force, position (entire surface), range (500), chance (2), max_count (100)
@@ -217,6 +200,7 @@ local function help()
     dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
     cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), countdown (false) valid values [true, false]
     start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
+    get_naked: player, delay (0 seconds), distance (random 50 - 100), duration (random 2 - 10 seconds)
     ]])
 end
 
@@ -235,8 +219,8 @@ local function onLoad()
         set_arti_range=research.set_arti_range,
         set_lab_speed=research.change_speed,
         teleport_distance=map.teleport_random,
-        teleport_delay_distance=map.teleport_delay, -- not yet done
         teleport_delay=map.timed_teleport,
+        teleport_delay_distance=map.timed_teleport_random,
         enemy_arty=map.enemy_artillery,
         remove_entity=map.remove_entities,
         reset_recipe=map.reset_assembler,
@@ -248,6 +232,7 @@ local function onLoad()
         dump_inv=fn_player.dump_inventory,
         cancel_hand_craft=fn_player.cancel_handcraft,
         start_hand_craft=fn_player.start_handcraft,
+        get_naked=fn_player.get_naked,
         help=help
     })
 end
