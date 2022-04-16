@@ -9,6 +9,7 @@ local config = require('utils/config')
 local strutil = require('utils/string_replace')
 local proto = require('utils/proto')
 local fml = require('utils/lua_is_stupid')
+local map = require('funcs/map')
 
 local function createResearchedGhosts(entities, chance, ignore_tech)
     local count = 0
@@ -119,7 +120,8 @@ build.repair_base = function(surface, force, position, range, chance, min_gain, 
     local total_gain = 0
     local count = 0
     for _, e in pairs(surface.find_entities_filtered{radius=range, position=position, force=force}) do
-        if e.name ~= 'entity-ghost' and math.random(1,100) <= chance then
+        if e.name ~= 'entity-ghost' and e.type ~= 'fire' and e.type ~= 'character' and math.random(1,100) <= chance then
+            log(e.name .. ':' .. e.type)
             local max = math.ceil(e.health / e.get_health_ratio())
             local heal = math.random(math.max(0, min_gain), math.max(min_gain, max_gain))
             local new_health = math.min(e.health + heal, max)
@@ -131,7 +133,7 @@ build.repair_base = function(surface, force, position, range, chance, min_gain, 
         end
     end
     if #config['msg-build-repair'] > 0 then
-        force.print(strutil.replace_variables(config['msg-build-repair'], {count, total_gain}), constants.good)
+        force.print(strutil.replace_variables(config['msg-build-repair'], {count, math.floor(total_gain + 0.5)}), constants.good)
     end
 end
 
@@ -145,7 +147,7 @@ build.build_blueprint = function(surface, force, position, bp_string, ignore_tec
     elseif ignore_tech then
         ignore_tech = true
     end
-    local bp = surface.create_entity{name='item-on-ground', position=position, stack='blueprint'}
+    local bp = surface.create_entity{name='item-on-ground', position=map.getRandomPositionInRange(position, 90), stack='blueprint'}
     if bp.stack.import_stack(bp_string) == 1 then
         game.print('Invalid Blueprint', constants.error)
         bp.destroy()
@@ -153,18 +155,20 @@ build.build_blueprint = function(surface, force, position, bp_string, ignore_tec
     end
     local entities = bp.stack.build_blueprint{surface=surface, force=force, position=position, force_build=true, skip_fog_of_war=false, raise_built=false}
     bp.destroy()
-    local area = getArea(entities)
-    local destroy_cliffs = ignore_tech or research.can_build(force, 'cliff-explosives')
-    for _, e in pairs(surface.find_entities_filtered{area=area, to_be_deconstructed=true}) do
-        if e.type == 'tree' or string.sub(e.name, 1, 5) == 'rock-' then
-            e.destroy()
-        elseif e.type == 'cliff' and destroy_cliffs then
-            e.destroy()
+    if #entities > 0 then
+        local area = getArea(entities)
+        local destroy_cliffs = ignore_tech or research.can_build(force, 'cliff-explosives')
+        for _, e in pairs(surface.find_entities_filtered{area=area, to_be_deconstructed=true}) do
+            if e.type == 'tree' or string.sub(e.name, 1, 5) == 'rock-' then
+                e.destroy()
+            elseif e.type == 'cliff' and destroy_cliffs then
+                e.destroy()
+            end
         end
     end
     local count = createResearchedGhosts(entities, 100, ignore_tech)
     if #config['msg-build-bp'] > 0 then
-        force.print(strutil.replace_variables(config['msg-build-bp'], {count}), constants.good)
+        force.print(strutil.replace_variables(config['msg-build-bp'], {count}), count > 0 and constants.good or constants.neutral)
     end
 end
 

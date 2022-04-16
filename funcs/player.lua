@@ -223,10 +223,10 @@ function player.dump_inventory_stack(player_, item, range, do_pickup)
 
     local count = stack.count
     for i = 1, count do
-        local pos = map.getRandomPosInRange(player_.position, range)
+        local pos = map.getRandomPositionInRange(player_.position, range)
         local ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
         while not ent or #ent < 1 do
-            pos = map.getRandomPosInRange(player_.position, range)
+            pos = map.getRandomPositionInRange(player_.position, range)
             ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
         end
         if stack.type == 'blueprint' or stack.type == 'blueprint-book' or stack.type == 'deconstruction-item' or stack.type == 'upgrade-item' or stack.type == 'item-with-tags' then
@@ -582,7 +582,7 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     -- or detect where our item got inserted into the inventory. The player
     -- may already have an item of the type we are inserting, so there is no
     -- way to apply equipment to the correct item otherwise.
-    pos = pos or map.getRandomPosInRange(player_.position, 10)
+    pos = pos or map.getRandomPositionInRange(player_.position, 10)
     local ent = player_.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
     if #ent > 0 then
         map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment)

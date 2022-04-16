@@ -52,4 +52,13 @@ strutil.replace_variables = function(str, replacements)
     return result
 end
 
+strutil.get_gps_tag = function(surface, position)
+    local msg = '[gps=' .. math.floor(position.x + 0.5) .. ',' .. math.floor(position.y + 0.5)
+    if surface.name ~= 'nauvis' then
+        msg = msg .. ',' .. surface.name
+    end
+    msg = msg .. ']'
+    return msg
+end
+
 return strutil

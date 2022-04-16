@@ -30,6 +30,9 @@ function teleport.getNonCollidingPosition(surface, position, player, range)
 end
 
 function teleport.checkTeleportLocationValid(surface, position, player)
+    if not position then
+        return false
+    end
     local chunkPos = {x = position.x / 32, y = position.y / 32}
     if (not surface.is_chunk_generated(chunkPos)) then
         surface.request_to_generate_chunks(position, 2)
@@ -104,6 +107,7 @@ function teleport.actualTeleport(player, surface, dest)
         return
     end
     local oldPos = player.position
+    local oldSur = player.surface
     if player.vehicle then
         if player.vehicle.type ~= 'locomotive' then
             player.vehicle.teleport(dest, surface)
@@ -117,7 +121,7 @@ function teleport.actualTeleport(player, surface, dest)
     global.silinthlp_teleport[player.name] = nil
     if #config['msg-map-teleport-player'] > 0 then
         local distance = map.getDistance(oldPos, dest)
-        player.force.print(strutil.replace_variables(config['msg-map-teleport-player'], {player.name, math.floor(distance + 0.5), '[gps=' .. math.floor(oldPos.x + 0.5) .. ',' .. math.floor(oldPos.y + 0.5) .. ']', '[gps=' .. math.floor(dest.x + 0.5) .. ',' .. math.floor(dest.y + 0.5) .. ']'}))
+        player.force.print(strutil.replace_variables(config['msg-map-teleport-player'], {player.name, math.floor(distance + 0.5), strutil.get_gps_tag(oldSur, oldPos), strutil.get_gps_tag(surface, dest)}))
     end
 end
 

@@ -72,8 +72,17 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'bj',
+        order = 'bja',
         default_value = '__1__ research labs are running at __2__% speed for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-research-lab-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'bjb',
+        default_value = '__1__ research labs have returned to normal research speed'
     },
     {
         name = 'sil-ihlp-msg-research-enabled',
@@ -202,6 +211,15 @@ data:extend({
         default_value = 'No entities were found for __1__'
     },
     {
+        name = 'sil-ihlp-msg-map-snap-wires',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fh',
+        default_value = '__1__ circuit connections and __2__ power connections within __3__ meters around __4__ have been cut'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',
@@ -262,7 +280,7 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'ge',
-        default_value = 'Barrage has ended'
+        default_value = 'Barrage on __1__ has ended'
     },
     {
         name = 'sil-ihlp-msg-player-dump-inventory',

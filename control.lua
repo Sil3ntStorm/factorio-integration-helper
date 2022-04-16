@@ -82,7 +82,7 @@ local function onTick(event)
             if task.count > 0 then
                 on_tick_n.add(game.tick + task.delay, task)
             elseif #config['msg-player-barrage-end'] > 0 then
-                task.player.force.print(config['msg-player-barrage-end'], constants.good)
+                task.player.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {task.player.name}), constants.good)
             end
         elseif task.action == 'restore_lab_speed' then
             task.force.laboratory_speed_modifier = task.force.laboratory_speed_modifier - task.added
@@ -112,10 +112,10 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             end
         elseif task.action == 'dress_player' then
-            local pos = map.getRandomPosInRange(task.player.position, task.distance or 20)
+            local pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
             fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0)
             for _, a in pairs(task.extra) do
-                pos = map.getRandomPosInRange(task.player.position, task.distance or 20)
+                pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
                 fn_player.give_armor_impl(task.player, a, pos, false, task.distance > 0)
             end
             if task.origin == 'naked' then
@@ -193,6 +193,7 @@ local function help()
     remove_entity: surface, force, position (0, 0), range (random 40 - 200), entity name (randomly selected), max (random 5 - 20), chance (random 10 - 100)
     reset_recipe: surface, force, position (entire surface), range (500), chance (2), max_count (100)
     biter_revive: chance (random 10 - 100), duration (random 30 - 180), surface (any), position (anywhere), range (anywhere)
+    snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80)
     modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 10 - 80, chance (80)
@@ -225,6 +226,7 @@ local function onLoad()
         remove_entity=map.remove_entities,
         reset_recipe=map.reset_assembler,
         biter_revive=map.revive_biters_on_death,
+        snap_wires=map.disconnect_wires,
         modify_walk_speed=fn_player.modify_walk_speed,
         modify_craft_speed=fn_player.modify_craft_speed,
         on_fire=fn_player.on_fire,

@@ -18,7 +18,7 @@ function map.getDistance(pos, tgt)
     return d
 end
 
-function map.getRandomPosInRange(pos, range)
+function map.getRandomPositionInRange(pos, range)
     local x = pos.x - range / 2
     local y = pos.y - range / 2
     local x2 = pos.x + range / 2
@@ -118,7 +118,7 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
         return
     end
     count = count or 1
-    target = target or map.getRandomPosInRange(position, target_range)
+    target = target or map.getRandomPositionInRange(position, target_range)
     chance = chance or 100
     target_range = target_range or 20
     position_range = position_range or 80
@@ -151,12 +151,12 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     if count > 1 then
         for i = 1, count do
             if math.random(1, 100) <= chance then
-                local tgtPos = randomize_target and map.getRandomPosInRange(origTgtPos, target_range) or (homing and target or origTgtPos)
+                local tgtPos = randomize_target and map.getRandomPositionInRange(origTgtPos, target_range) or (homing and target or origTgtPos)
                 local tgtPos2 = tgtPos
                 if tgtPos2.position then
                     tgtPos2 = tgtPos2.position
                 end
-                local srcPos2 = map.getRandomPosInRange(srcPos, 5 + count)
+                local srcPos2 = map.getRandomPositionInRange(srcPos, 5 + count)
                 surface.create_entity{
                     name = item,
                     position = srcPos2,
@@ -304,6 +304,48 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
         force.print(strutil.replace_variables(config['msg-map-remove-entity-nothing'], {{'entity-name.' .. name}}), constants.neutral)
     elseif #config['msg-map-remove-entity'] > 0 then
         force.print(strutil.replace_variables(config['msg-map-remove-entity'], {cnt, {'entity-name.' .. name}}), cnt > 0 and constants.bad or constants.neutral)
+    end
+end
+
+function map.disconnect_wires(surface, force, position, range, circuit, power, chance)
+    if not surface or not force or not position or not position.x or not position.y then
+        game.print('Invalid / missing parameters: surface, force and position are required', constants.error)
+        return
+    end
+
+    range = range or math.random(50, 200)
+    chance = chance or math.random(20, 80)
+
+    chance = math.max(1, math.min(100, chance))
+
+    if circuit ~= true and circuit ~= false then
+        circuit = true
+    end
+    if power ~= true and power ~= false then
+        power = true
+    end
+
+    local result = surface.find_entities_filtered{position = position, radius = range, force = force}
+    local count = 0
+    local count_pwr = 0
+    for _, ent in pairs(result) do
+        if math.random(1, 100) <= chance then
+            if circuit and ent.circuit_connected_entities then
+                count = count + #ent.circuit_connected_entities.green + #ent.circuit_connected_entities.red
+                ent.disconnect_neighbour(defines.wire_type.red)
+                ent.disconnect_neighbour(defines.wire_type.green)
+            end
+            if power then
+                local old_id = ent.electric_network_id
+                ent.disconnect_neighbour(defines.wire_type.copper)
+                if ent.electric_network_id ~= old_id then
+                    count_pwr = count_pwr + 1
+                end
+            end
+        end
+    end
+    if #config['msg-map-snap-wires'] > 0 then
+        force.print(strutil.replace_variables(config['msg-map-snap-wires'], {count, count_pwr, range, strutil.get_gps_tag(surface, position)}), count + count_pwr > 0 and constants.bad or constants.neutral)
     end
 end
 
