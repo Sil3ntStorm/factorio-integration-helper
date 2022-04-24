@@ -7,6 +7,7 @@ local on_tick_n = require('__flib__.on-tick-n')
 local constants = require('constants')
 local config = require('utils/config')
 local strutil = require('utils/string_replace')
+local tc = require('utils/type_check')
 
 function research.init()
     global.silinthlp_tech = {}
@@ -69,7 +70,7 @@ function research.get_random_available_research(force, exclude_current)
 end
 
 function research.start_research(force, chance)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
@@ -100,7 +101,7 @@ function research.start_research(force, chance)
 end
 
 function research.cancel_research(force, chance)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
@@ -118,12 +119,12 @@ function research.cancel_research(force, chance)
 end
 
 function research.advance_research(force, chance, percent)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
     chance = chance or 75
-    if not percent then
+    if type(percent) ~= 'number' then
         percent = math.random(10, 75)
         if math.random(1, 100) <= 5 then
             percent = percent * -1
@@ -148,12 +149,12 @@ function research.advance_research(force, chance, percent)
 end
 
 function research.disable_research(force, chance, seconds)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
     chance = chance or 50
-    if not seconds then
+    if type(seconds) ~= 'number' then
         seconds = math.random(30, 300)
     end
     if math.random(1, 100) <= chance then
@@ -175,7 +176,7 @@ function research.disable_research(force, chance, seconds)
 end
 
 function research.enable_research(force, chance, queue, enable_queue)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
@@ -195,7 +196,7 @@ function research.enable_research(force, chance, queue, enable_queue)
 end
 
 function research.change_speed(force, boost, chance, duration)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
@@ -210,7 +211,7 @@ function research.change_speed(force, boost, chance, duration)
         return val
     end
 
-    if not boost then
+    if type(boost) ~= 'number' then
         boost = rndBoost()
     end
     boost = math.min(200, math.max(-100, boost))
@@ -246,7 +247,7 @@ function research.change_speed(force, boost, chance, duration)
 end
 
 function research.set_arti_range(force, levels, chance, duration)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end
@@ -273,7 +274,7 @@ function research.set_arti_range(force, levels, chance, duration)
 end
 
 function research.set_arti_speed(force, levels, chance, duration)
-    if not force then
+    if not tc.is_force(force) then
         game.print('Force is required', constants.error)
         return
     end

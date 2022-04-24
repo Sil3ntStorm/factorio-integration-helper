@@ -10,6 +10,7 @@ local strutil = fml.include('utils/string_replace')
 local constants = fml.include('constants')
 local proto = fml.include('utils/proto')
 local tp = fml.include('funcs/teleport')
+local tc = require('utils/type_check')
 
 function map.getDistance(pos, tgt)
     local x = (tgt.x - pos.x) ^ 2
@@ -58,7 +59,7 @@ end
 --
 
 function map.teleport_random(player, target_surface, distance)
-    if not player or not target_surface or not distance then
+    if not tc.is_player(player) or not tc.is_surface(target_surface) or type(distance) ~= 'number' then
         game.print('Missing parameters: player, target_surface, distance are required', constants.error)
         return
     end
@@ -73,7 +74,7 @@ function map.teleport_random(player, target_surface, distance)
 end
 
 function map.timed_teleport_random(player, target_surface, distance, seconds)
-    if not player or not target_surface or not distance then
+    if not tc.is_player(player) or not tc.is_surface(target_surface) or type(distance) ~= 'number' then
         game.print('Missing parameters: player, target_surface, distance are required', constants.error)
         return
     end
@@ -93,7 +94,7 @@ function map.timed_teleport_random(player, target_surface, distance, seconds)
 end
 
 function map.timed_teleport(player, target_surface, position, seconds)
-    if not player or not target_surface or not position or not position.x or not position.y then
+    if not tc.is_player(player) or not tc.is_surface(target_surface) or not tc.is_position(position) then
         game.print('Missing parameters: player, target_surface, position are required', constants.error)
         return
     end
@@ -113,7 +114,7 @@ function map.timed_teleport(player, target_surface, position, seconds)
 end
 
 function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing)
-    if not surface or not position or not item then
+    if not tc.is_surface(target_surface) or not tc.is_position(position) or not item then
         game.print('surface, position and item are required', constants.error)
         return
     end
@@ -176,7 +177,7 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
 end
 
 function map.reset_assembler(surface, force, position, range, chance, max_count)
-    if not surface or not force then
+    if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('Invalid input parameters. Surface and Force are required', constants.error)
         return
     end
@@ -238,7 +239,7 @@ function map.revive_biters_on_death(chance, duration, surface, position, range)
 end
 
 function map.enemy_artillery(surface, force, position, range, max, chance)
-    if not surface or not force then
+    if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('surface and force are required', constants.error)
         return
     end
@@ -266,7 +267,7 @@ function map.enemy_artillery(surface, force, position, range, max, chance)
 end
 
 function map.remove_entities(surface, force, position, range, name, max, chance)
-    if not surface or not force then
+    if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('surface and force are required', constants.error)
         return
     end
@@ -313,7 +314,7 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
 end
 
 function map.disconnect_wires(surface, force, position, range, circuit, power, chance)
-    if not surface or not force or not position or not position.x or not position.y then
+    if not tc.is_surface(surface) or not tc.is_force(force) or not tc.is_position(position) then
         game.print('Invalid / missing parameters: surface, force and position are required', constants.error)
         return
     end

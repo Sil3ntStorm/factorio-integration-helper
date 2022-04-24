@@ -11,9 +11,10 @@ local map = require('funcs/map')
 local fml = require('utils/lua_is_stupid')
 local proto = fml.include('utils/proto')
 local on_tick_n = require('__flib__.on-tick-n')
+local tc = require('utils/type_check')
 
 function player.modify_walk_speed(player_, modifier, duration, chance)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -57,7 +58,7 @@ function player.modify_walk_speed(player_, modifier, duration, chance)
 end
 
 function player.modify_craft_speed(player_, modifier, duration, chance)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -100,24 +101,24 @@ function player.modify_craft_speed(player_, modifier, duration, chance)
     end
 end
 
-function player.set_on_fire(player, range, chance)
-    if not player.character then
+function player.set_on_fire(player_, range, chance)
+    if not tc.is_player(player_) or not player_.character then
         -- possibly dead right now.
         return
     end
     range = math.min(100, math.max(0, range))
-    local x = player.position.x - range
-    local y = player.position.y - range
-    local x2 = player.position.x + range
-    local y2 = player.position.y + range
+    local x = player_.position.x - range
+    local y = player_.position.y - range
+    local x2 = player_.position.x + range
+    local y2 = player_.position.y + range
     while x < x2 do
         local y3 = y
         while y3 < y2 do
-            if math.random(1, 100) <= chance and map.getDistance(player.position, {x=x, y=y3}) <= range then
-                player.surface.create_entity{
+            if math.random(1, 100) <= chance and map.getDistance(player_.position, {x=x, y=y3}) <= range then
+                player_.surface.create_entity{
                     position = {x = x, y = y3},
                     name = 'fire-flame-on-tree',
-                    target = player.character
+                    target = player_.character
                 }
             end
             y3 = y3 + 1
@@ -127,7 +128,7 @@ function player.set_on_fire(player, range, chance)
 end
 
 function player.on_fire(player_, duration, range, chance)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -155,7 +156,7 @@ function player.on_fire(player_, duration, range, chance)
 end
 
 function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing, randomize_target)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -226,7 +227,7 @@ function player.dump_inventory_done_msg(player_, dropped)
 end
 
 function player.dump_inventory_stack(player_, item, range, do_pickup)
-    if not player_ or not player_.character or not item or not range then
+    if not tc.is_player(player_) or not player_.character or type(item) ~= 'string' or type(range) ~= 'number' then
         game.print('no player / character / item / range')
         return nil
     end
@@ -354,7 +355,7 @@ end
 
 -- public entry point
 function player.dump_inventory(player_, range, chance, delay, duration, pickup)
-    if not player_ or not player_.valid or not player_.character then
+    if not tc.is_player(player_) or not player_.valid or not player_.character then
         game.print('player is required and must be a valid player with a character', constants.error)
         return
     end
@@ -418,7 +419,7 @@ function player.cancel_handcraft_impl(task)
 end
 
 function player.cancel_handcraft(player_, chance, delay, duration, countdown)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -469,7 +470,7 @@ function player.start_handcraft_impl(task)
 end
 
 function player.start_handcraft(player_, item, count, chance, delay)
-    if not player_ then
+    if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
@@ -506,7 +507,7 @@ function player.get_equipment_grid_content(item_stack)
 end
 
 function player.get_naked_impl(task, do_print)
-    if not task.player or not task.player.valid or not task.player.connected then
+    if not tc.is_player(task.player) or not task.player.valid or not task.player.connected then
         game.print('Player died or disconnected', constants.error)
         return
     end
@@ -564,7 +565,7 @@ function player.get_naked_impl(task, do_print)
 end
 
 function player.get_naked(player_, delay, distance, duration)
-    if not player_ or not player_.character then
+    if not tc.is_player(player_) or not player_.character then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -592,7 +593,7 @@ function player.get_naked(player_, delay, distance, duration)
 end
 
 function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave_on_ground)
-    if not player_ then
+    if not tc.is_player(player_) then
         return
     end
     local inv = nil

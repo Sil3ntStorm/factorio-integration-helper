@@ -9,6 +9,7 @@ local map = fml.include('funcs/map')
 local config = fml.include('utils/config')
 local strutil = fml.include('utils/string_replace')
 local constants = fml.include('constants')
+local tc = require('utils/type_check')
 
 function teleport.getPlayerPrototype(player)
     local player_prototype = player.character.prototype
@@ -30,7 +31,7 @@ function teleport.getNonCollidingPosition(surface, position, player, range)
 end
 
 function teleport.checkTeleportLocationValid(surface, position, player)
-    if not position or not position.y or not position.x then
+    if not tc.is_position(position) or not tc.is_surface(surface) or not tc.is_player(player) then
         return false
     end
     local chunkPos = {x = position.x / 32, y = position.y / 32}
@@ -95,8 +96,8 @@ function teleport.findRandomTeleportLocationForPlayer(task)
 end
 
 function teleport.actualTeleport(player, surface, dest)
-    if not player or not surface or not dest or not dest.y or not dest.x then
-        game.print('Missing parameters', constants.error)
+    if not tc.is_player(player) or not tc.is_surface(surface) or not tc.is_position(dest) then
+        game.print('Missing parameters: player, surface, position are required', constants.error)
         return
     end
     global.silinthlp_teleport = global.silinthlp_teleport or {}
