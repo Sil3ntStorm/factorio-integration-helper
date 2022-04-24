@@ -93,7 +93,7 @@ function map.timed_teleport_random(player, target_surface, distance, seconds)
 end
 
 function map.timed_teleport(player, target_surface, position, seconds)
-    if not player or not target_surface or not position then
+    if not player or not target_surface or not position or not position.x or not position.y then
         game.print('Missing parameters: player, target_surface, position are required', constants.error)
         return
     end
@@ -127,6 +127,11 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     end
     if homing ~= false and homing ~= true then
         homing = true
+    end
+
+    if not fml.contains(proto.get_projectiles(), item) then
+        game.print(item .. ' is not a valid type!', constants.error)
+        return
     end
 
     local origTgtPos = {}

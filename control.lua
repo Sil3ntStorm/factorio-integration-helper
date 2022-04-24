@@ -72,15 +72,28 @@ local function onTick(event)
                 on_tick_n.add(game.tick + task.nthTick, task)
             end
         elseif task.action == 'reset_arti_speed' then
-            local original = task.force.get_gun_speed_modifier('artillery-turret')
-            task.force.set_gun_speed_modifier('artillery-turret', original - task.added)
+            local original = task.force.get_gun_speed_modifier('artillery-shell')
+            task.force.set_gun_speed_modifier('artillery-shell', original - task.added)
+            if #config['msg-research-arti-speed-end'] > 0 then
+                task.force.print(config['msg-research-arti-speed-end'], constants.bad)
+            end
         elseif task.action == 'reset_arti_range' then
             task.force.artillery_range_modifier = task.force.artillery_range_modifier - task.added
+            if #config['msg-research-arti-range-end'] > 0 then
+                task.force.print(config['msg-research-arti-range-end'], constants.bad)
+            end
         elseif task.action == 'spawn_explosive' then
             map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
             task.count = task.count - 1
             if task.count > 0 then
-                on_tick_n.add(game.tick + task.delay, task)
+                local delay = task.delay
+                local tmp = strutil.split(delay, ':')
+                if tmp[1] == 'random' then
+                    tmp[2] = tmp[2] or 1
+                    tmp[3] = tmp[3] or 10
+                    delay = math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
+                end
+                on_tick_n.add(game.tick + delay * 60, task)
             elseif #config['msg-player-barrage-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {task.player.name}), constants.good)
             end
@@ -95,7 +108,7 @@ local function onTick(event)
                 game.print(config['msg-map-revive-biters-end'], constants.good)
             end
         elseif task.action == 'dump_inventory' then
-            fn_player.dump_inventory_impl(task.player, task.range, task.chance, task.end_tick, task.dropped)
+            fn_player.dump_inventory_impl(task.player, task.range, task.chance, task.end_tick, task.dropped, task.pickup)
         elseif task.action == 'cancel_handcraft' then
             fn_player.cancel_handcraft_impl(task)
         elseif task.action == 'start_handcraft' then
@@ -125,6 +138,8 @@ local function onTick(event)
                     task.player.force.print(strutil.replace_variables(config['msg-player-naked-end'], {task.player.name}), constants.good)
                 end
             end
+        elseif task.action == 'welcome' then
+            game.print('SilentStorm Integration Helper initialized')
         else
             game.print('WARNING! Event ' .. (task.action and task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -197,9 +212,9 @@ local function help()
     modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 10 - 80, chance (80)
-    barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds), chance (90), homing (true) valid values: [true, false], random_target (true) valid values: [true, false]
+    barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds) ['random' or numeric value in seconds], chance (90), delay (0), homing (true) valid values: [true, false], random_target (true) valid values: [true, false]
     dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
-    cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), countdown (false) valid values [true, false]
+    cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), duration(0 seconds), countdown (false) valid values [true, false]
     start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
     get_naked: player, delay (0 seconds), distance (random 50 - 100), duration (random 2 - 10 seconds)
     ]])
@@ -248,12 +263,13 @@ end)
 script.on_configuration_changed(function()
     -- catch new recipes on mod changes
     research.init()
+    game.print('SilentStorm Integration Helper initialized')
 end)
 
 script.on_load(onLoad)
 script.on_event(defines.events.on_tick, onTick)
 script.on_event(defines.events.on_entity_died, onEntityDied, {{filter='type', type='unit'}, {filter='type', type='turret', mode='or'}})
-script.on_event(defines.events.on_player_created, function(event)
+script.on_event({defines.events.on_player_created, defines.events.on_player_joined_game}, function(event)
     local plr = game.get_player(event.player_index)
     if plr and plr.connected then
         plr.print('SilentStorm Integration Helper initialized')

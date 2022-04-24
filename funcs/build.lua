@@ -121,7 +121,6 @@ build.repair_base = function(surface, force, position, range, chance, min_gain, 
     local count = 0
     for _, e in pairs(surface.find_entities_filtered{radius=range, position=position, force=force}) do
         if e.name ~= 'entity-ghost' and e.type ~= 'fire' and e.type ~= 'character' and math.random(1,100) <= chance then
-            log(e.name .. ':' .. e.type)
             local max = math.ceil(e.health / e.get_health_ratio())
             local heal = math.random(math.max(0, min_gain), math.max(min_gain, max_gain))
             local new_health = math.min(e.health + heal, max)

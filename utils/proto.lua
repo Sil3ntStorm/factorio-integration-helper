@@ -21,4 +21,13 @@ function proto.get_entity_prototypes()
     return rval
 end
 
+function proto.get_projectiles()
+    local result = game.get_filtered_entity_prototypes({{filter='type', type='projectile'}, {filter='type', type='artillery-projectile', mode='or'}})
+    local rval = {}
+    for name, _ in pairs(result) do
+        table.insert(rval, name)
+    end
+    return rval
+end
+
 return proto

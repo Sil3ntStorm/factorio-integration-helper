@@ -290,8 +290,8 @@ function research.set_arti_speed(force, levels, chance, duration)
     task['force'] = force
     task['added'] = levels
 
-    local original = force.get_gun_speed_modifier('artillery-turret')
-    force.set_gun_speed_modifier('artillery-turret', original + levels)
+    local original = force.get_gun_speed_modifier('artillery-shell')
+    force.set_gun_speed_modifier('artillery-shell', original + levels)
     
     on_tick_n.add(game.tick + duration * 60, task)
 

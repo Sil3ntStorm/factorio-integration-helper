@@ -30,7 +30,7 @@ function teleport.getNonCollidingPosition(surface, position, player, range)
 end
 
 function teleport.checkTeleportLocationValid(surface, position, player)
-    if not position then
+    if not position or not position.y or not position.x then
         return false
     end
     local chunkPos = {x = position.x / 32, y = position.y / 32}
@@ -95,10 +95,11 @@ function teleport.findRandomTeleportLocationForPlayer(task)
 end
 
 function teleport.actualTeleport(player, surface, dest)
-    if not player or not surface or not dest then
+    if not player or not surface or not dest or not dest.y or not dest.x then
         game.print('Missing parameters', constants.error)
         return
     end
+    global.silinthlp_teleport = global.silinthlp_teleport or {}
     if not teleport.checkTeleportLocationValid(surface, dest, player) then
         if #config['msg-map-teleport-fail'] > 0 then
             player.force.print(strutil.replace_variables(config['msg-map-teleport-fail'], {player.name, surface.name}), constants.neutral)

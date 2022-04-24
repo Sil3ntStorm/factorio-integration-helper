@@ -9,6 +9,7 @@ local config = require('utils/config')
 local strutil = require('utils/string_replace')
 local map = require('funcs/map')
 local fml = require('utils/lua_is_stupid')
+local proto = fml.include('utils/proto')
 local on_tick_n = require('__flib__.on-tick-n')
 
 function player.modify_walk_speed(player_, modifier, duration, chance)
@@ -153,7 +154,7 @@ function player.on_fire(player_, duration, range, chance)
     end
 end
 
-function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, homing, randomize_target)
+function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing, randomize_target)
     if not player_ then
         game.print('player is required', constants.error)
         return
@@ -165,6 +166,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     count = count or math.random(2, 20)
     secondsBetweenVolley = secondsBetweenVolley or math.random(1, 10)
     chance = chance or 90
+    delay = delay or 0
     if homing ~= false and homing ~= true then
         homing = true
     end
@@ -172,28 +174,48 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
         randomize_target = true
     end
 
+    if not fml.contains(proto.get_projectiles(), itemToSpawn) then
+        game.print(itemToSpawn .. ' is not a valid type!', constants.error)
+        return
+    end
+
     local task = {}
     task['action'] = 'spawn_explosive'
     task['player'] = player_
     task['chance'] = chance
     task['item'] = itemToSpawn
-    task['count'] = count - 1
-    task['delay'] = secondsBetweenVolley * 60
+    task['count'] = count - (delay > 0 and 0 or 1)
+    task['delay'] = secondsBetweenVolley
     task['itemCount'] = countPerVolley
     task['range'] = range
     task['homing'] = homing
     task['rnd_tgt'] = randomize_target
-    
+
     if #config['msg-player-barrage-start'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {player_.name, countPerVolley, {'item-name.' .. itemToSpawn}, secondsBetweenVolley, count}), constants.bad)
+        if itemToSpawn == 'artillery-projectile' then
+            itemToSpawn = 'artillery-shell'
+        elseif itemToSpawn == 'atomic-rocket' then
+            itemToSpawn = 'atomic-bomb'
+        end
+        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {player_.name, countPerVolley, {'item-name.' .. itemToSpawn}, strutil.split(secondsBetweenVolley, ':')[1], count, delay}), constants.bad)
     end
-    if math.random(1, 100) <= chance then
-        map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
-    end
-    if count > 1 then
-        on_tick_n.add(game.tick + secondsBetweenVolley * 60, task)
-    elseif #config['msg-player-barrage-end'] > 0 then
-        player_.force.print(config['msg-player-barrage-end'], constants.good)
+    if delay > 0 then
+        on_tick_n.add(game.tick + delay * 60, task)
+    else
+        if math.random(1, 100) <= chance then
+            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
+        end
+        if count > 1 then
+            local tmp = strutil.split(secondsBetweenVolley, ':')
+            if tmp[1] == 'random' then
+                tmp[2] = tmp[2] or 1
+                tmp[3] = tmp[3] or 10
+                secondsBetweenVolley = math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
+            end
+            on_tick_n.add(game.tick + secondsBetweenVolley * 60, task)
+        elseif #config['msg-player-barrage-end'] > 0 then
+            player_.force.print(config['msg-player-barrage-end'], constants.good)
+        end
     end
 end
 
@@ -224,10 +246,10 @@ function player.dump_inventory_stack(player_, item, range, do_pickup)
     local count = stack.count
     for i = 1, count do
         local pos = map.getRandomPositionInRange(player_.position, range)
-        local ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
+        local ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
         while not ent or #ent < 1 do
             pos = map.getRandomPositionInRange(player_.position, range)
-            ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, false, do_pickup and player_.force or nil, true)
+            ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
         end
         if stack.type == 'blueprint' or stack.type == 'blueprint-book' or stack.type == 'deconstruction-item' or stack.type == 'upgrade-item' or stack.type == 'item-with-tags' then
             -- just returning nil/empty string for stuff that cannot be exported would have been too complicated I guess...
@@ -432,6 +454,10 @@ function player.start_handcraft_impl(task)
             if task.player.get_craftable_count(name) > 0 then
                 table.insert(choices, name)
             end
+        end
+        if fml.actual_size(choices) == 0 then
+            -- TODO: Print an error message maybe? Or pass it up a level to the caller?
+            return nil
         end
 
         item = choices[math.random(1, fml.actual_size(choices))]

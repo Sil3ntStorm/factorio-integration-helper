@@ -61,4 +61,12 @@ strutil.get_gps_tag = function(surface, position)
     return msg
 end
 
+strutil.split = function(str, delim)
+    local result = {}
+    string.gsub(str, '([^' .. delim .. ']+)', function (r)
+        table.insert(result, r)
+    end)
+    return result
+end
+
 return strutil

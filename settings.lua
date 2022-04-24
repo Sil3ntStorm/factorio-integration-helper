@@ -58,13 +58,31 @@ data:extend({
         default_value = 'Artillery is shooting faster for __2__ seconds'
     },
     {
+        name = 'sil-ihlp-msg-research-arti-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'bhb',
+        default_value = 'Artillery overclock has ended, shooting speed is back to normal'
+    },
+    {
         name = 'sil-ihlp-msg-research-arti-range',
         type = 'string-setting',
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
         order = 'bi',
-        default_value = 'Artillery is shooting __1__ further for __2__ seconds'
+        default_value = 'Artillery is shooting further for __2__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-research-arti-range-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'bi',
+        default_value = 'Artillery range has returned to normal'
     },
     {
         name = 'sil-ihlp-msg-research-lab-speed',
@@ -271,7 +289,7 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'gd',
-        default_value = 'Stay away from __1__, they seem to attract __2__ __3__ every __4__ seconds'
+        default_value = 'Stay away from __1__, in __6__ seconds they seem to attract __2__ __3__ every __4__ seconds'
     },
     {
         name = 'sil-ihlp-msg-player-barrage-end',
