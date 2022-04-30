@@ -211,7 +211,7 @@ local function help()
     snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80)
     modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
     modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
-    on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 10 - 80, chance (80)
+    on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 4 - 80, chance (80)
     barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds) ['random' or numeric value in seconds], chance (90), delay (0), homing (true) valid values: [true, false], random_target (true) valid values: [true, false]
     dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
     cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), duration(0 seconds), countdown (false) valid values [true, false]

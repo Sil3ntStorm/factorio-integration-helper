@@ -136,7 +136,7 @@ function player.on_fire(player_, duration, range, chance)
     range = range or math.random(10, 40)
     chance = chance or 80
     
-    range = math.min(80, math.max(10, range))
+    range = math.min(80, math.max(4, range))
 
     local task = {}
     task['action'] = 'player_on_fire'
@@ -228,19 +228,16 @@ end
 
 function player.dump_inventory_stack(player_, item, range, do_pickup)
     if not tc.is_player(player_) or not player_.character or type(item) ~= 'string' or type(range) ~= 'number' then
-        game.print('no player / character / item / range')
         return nil
     end
     
     local inv = player_.get_main_inventory()
     if not inv then
-        game.print('no inv')
         return nil
     end
     
     local stack = inv.find_item_stack(item)
     if not stack then
-        game.print('no stack')
         return nil
     end
 
@@ -284,6 +281,13 @@ function player.dump_inventory_stack(player_, item, range, do_pickup)
 end
 
 function player.dump_inventory_impl(player_, range, chance, endTick, prevRuns, do_pickup)
+    if not player_ or not player_.character or not player_.connected then
+        -- disconnected or dead
+        if tc.is_player(player_) then
+            player_.force.print('Player is dead or no longer connected', constants.error)
+        end
+        return
+    end
     local inv = player_.character.get_main_inventory()
     local content = inv.get_contents()
     local stackCount = fml.actual_size(content)
@@ -303,7 +307,7 @@ function player.dump_inventory_impl(player_, range, chance, endTick, prevRuns, d
 
     if stackCount <= 0 then
         if prevRuns == 0 then
-            player_.force.print('No inventory items found', constants.bad)
+            player_.force.print('No inventory items found', constants.neutral)
         else
             player.dump_inventory_done_msg(player_, prevRuns)
         end
