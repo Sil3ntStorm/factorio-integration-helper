@@ -114,7 +114,7 @@ function map.timed_teleport(player, target_surface, position, seconds)
 end
 
 function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing)
-    if not tc.is_surface(target_surface) or not tc.is_position(position) or not item then
+    if not tc.is_surface(surface) or not tc.is_position(position) or not item then
         game.print('surface, position and item are required', constants.error)
         return
     end

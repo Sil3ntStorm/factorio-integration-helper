@@ -2,8 +2,6 @@
 --
 -- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
 
-local DEV = true
-
 local constants = require('constants')
 local research = require('funcs/research_tree')
 local build = require('funcs/build')
@@ -35,6 +33,9 @@ local function onTick(event)
                 local pos = nil
                 if task.position then
                     -- fixed teleport
+                    if not tp.checkTeleportLocationValid(task.dest_surface, task.position, task.player) then
+                        task.position = tp.getNonCollidingPosition(task.dest_surface, task.position, task.player, 10) or task.position
+                    end
                     tp.actualTeleport(task.player, task.dest_surface, task.position)
                 else
                     -- Random teleport
@@ -53,9 +54,15 @@ local function onTick(event)
         elseif task.action == 'restore_walking_speed' then
             task.player.character_running_speed_modifier = task.original
             global.silinthlp_walk_speed[task.player.name] = nil
+            if #config['msg-player-walk-speed-end'] > 0 then
+                task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-end'], {task.player.name}), constants.neutral)
+            end
         elseif task.action == 'restore_crafting_speed' then
             task.player.character_crafting_speed_modifier = task.original
             global.silinthlp_craft_speed[task.player.name] = nil
+            if #config['msg-player-craft-speed-end'] > 0 then
+                task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-end'], {task.player.name}), constants.neutral)
+            end
         elseif task.action == 'player_on_fire' then
             if map.getDistance(task.player.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
                 fn_player.set_on_fire(task.player, task.range, task.chance)
@@ -181,13 +188,6 @@ local function onEntityDied(event)
     end
 end
 
-local function cancelTP()
-    if global.silinthlp_nexttp then
-        on_tick_n.remove(global.silinthlp_nexttp)
-        global.silinthlp_nexttp = nil
-    end
-end
-
 local function help()
     game.print([[Values in parentheses denote the default value if not specified. If applicable the valid range that is enforced for a parameter is listed after the default value. Available functions are:
     repair_base: surface, force, position, range (15), chance (75), minimum_health_gain (20), maximum_health_gain (150)
@@ -273,8 +273,8 @@ script.on_event({defines.events.on_player_created, defines.events.on_player_join
     local plr = game.get_player(event.player_index)
     if plr and plr.connected then
         plr.print('SilentStorm Integration Helper initialized')
-        if DEV and plr.character then
-            plr.character_running_speed_modifier = 1.2
+        if plr.character and plr.character_running_speed_modifier == 1.2 then
+            plr.character_running_speed_modifier = 0
         end
     end
 end)

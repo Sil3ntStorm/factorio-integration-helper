@@ -252,8 +252,17 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'gb',
+        order = 'gab',
         default_value = '__1__ legs are getting weak, they are walking __2__% slower for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-walk-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gac',
+        default_value = ''
     },
     {
         name = 'sil-ihlp-msg-player-craft-speed-inc',
@@ -261,7 +270,7 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'ga',
+        order = 'gb',
         default_value = '__1__ biceps have been growing, they are crafting __2__% faster for __3__ seconds'
     },
     {
@@ -270,8 +279,17 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'gb',
+        order = 'gbb',
         default_value = '__1__ arms are tired, they are crafting __2__% slower for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-craft-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gbc',
+        default_value = '__1__ crafting speed has returned to normal'
     },
     {
         name = 'sil-ihlp-msg-player-on-fire',
