@@ -12,6 +12,14 @@ local strutil = require('utils/string_replace')
 local tp = require('funcs/teleport')
 local on_tick_n = require('__flib__.on-tick-n')
 
+local function showTextOnPlayer(msg, plr, color, scale)
+    if #msg == 0 or not plr or not plr.connected or not plr.character then
+        return
+    end
+    color = color or constants.neutral
+    rendering.draw_text{text = msg, surface = plr.surface, target = plr.character, time_to_live = 60, forces = {plr.force}, color = color, scale_with_zoom = true, alignment = 'center', target_offset={0, -2.5}, scale=scale}
+end
+
 local function onTick(event)
     local list = on_tick_n.retrieve(event.tick)
     if not list then
@@ -46,7 +54,26 @@ local function onTick(event)
             else
                 if #config['msg-map-teleport-countdown'] > 0 then
                     local msg = strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, task.delay})
-                    rendering.draw_text{text = msg, surface = task.player.surface, target = task.player.character, time_to_live = 60, forces = {task.player.force}, color = constants.neutral, scale_with_zoom = true, alignment = 'center', target_offset={0, -2.5}}
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, nil, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
+        elseif task.action == 'set_walking_speed' then
+            if task.delay == 0 then
+                fn_player.modify_walk_speed_impl(task)
+            else
+                if #config['msg-player-walk-speed-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-walk-speed-countdown'], {task.player.name, task.delay, task.duration, task.modifier})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, nil, scale)
                 end
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
@@ -57,6 +84,21 @@ local function onTick(event)
             if #config['msg-player-walk-speed-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-end'], {task.player.name}), constants.neutral)
             end
+        elseif task.action == 'set_crafting_speed' then
+            if task.delay == 0 then
+                fn_player.modify_craft_speed_impl(task)
+            else
+                if #config['msg-player-craft-speed-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-craft-speed-countdown'], {task.player.name, task.delay, task.duration, task.modifier})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, nil, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         elseif task.action == 'restore_crafting_speed' then
             task.player.character_crafting_speed_modifier = task.original
             global.silinthlp_craft_speed[task.player.name] = nil
@@ -64,19 +106,31 @@ local function onTick(event)
                 task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-end'], {task.player.name}), constants.neutral)
             end
         elseif task.action == 'player_on_fire' then
-            if map.getDistance(task.player.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
-                fn_player.set_on_fire(task.player, task.range, task.chance)
-                task['lastPos'] = task.player.position
-                task['executed'] = game.tick
-            end
-            if task.player.character then
-                task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
+            if game.tick < task.firstTick then
+                if #config['msg-player-on-fire-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-on-fire-countdown'], {math.floor((task.firstTick - game.tick) / 60), math.floor((task.lastTick - task.firstTick) / 60), task.range})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, constants.bad, scale)
+                end
+                on_tick_n.add(game.tick + 60, task)
             else
-                -- player dead, try again in 20 ticks
-                task['nthTick'] = 20
-            end
-            if task.lastTick - task.nthTick >= game.tick then
-                on_tick_n.add(game.tick + task.nthTick, task)
+                if map.getDistance(task.player.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
+                    fn_player.set_on_fire(task.player, task.range, task.chance)
+                    task['lastPos'] = task.player.position
+                    task['executed'] = game.tick
+                end
+                if task.player.character then
+                    task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
+                else
+                    -- player dead, try again in 20 ticks
+                    task['nthTick'] = 20
+                end
+                if task.lastTick - task.nthTick >= game.tick then
+                    on_tick_n.add(game.tick + task.nthTick, task)
+                end
             end
         elseif task.action == 'reset_arti_speed' then
             local original = task.force.get_gun_speed_modifier('artillery-shell')
@@ -109,6 +163,32 @@ local function onTick(event)
             if #config['msg-research-lab-speed-end'] > 0 then
                 task.force.print(strutil.replace_variables(config['msg-research-lab-speed-end'], {task.force.name}))
             end
+        elseif task.action == 'enable_biter_revive' then
+            if task.delay == 0 then
+                map.revive_biters_on_death_impl(task)
+            else
+                if #config['msg-map-revive-biters-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-map-revive-biters-countdown'], {task.chance, task.duration, task.delay})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    for _, plr in pairs(game.players) do
+                        local show = true
+                        if task.surface and plr.surface ~= task.surface then
+                            show = false
+                        end
+                        if task.position and task.range and map.getDistance(plr.position, task.position) >= task.range then
+                            show = false
+                        end
+                        if show then
+                            showTextOnPlayer(msg, plr, constants.bad, scale)
+                        end
+                    end
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         elseif task.action == 'disable_biter_revive' then
             global.silinthlp_biter_revive = nil
             if #config['msg-map-revive-biters-end'] > 0 then
@@ -116,6 +196,8 @@ local function onTick(event)
             end
         elseif task.action == 'dump_inventory' then
             fn_player.dump_inventory_impl(task.player, task.range, task.chance, task.end_tick, task.dropped, task.pickup)
+        elseif task.action == 'welcome' then
+            game.print('SilentStorm Integration Helper initialized')
         elseif task.action == 'cancel_handcraft' then
             fn_player.cancel_handcraft_impl(task)
         elseif task.action == 'start_handcraft' then
@@ -126,7 +208,7 @@ local function onTick(event)
             else
                 if #config['msg-player-naked-countdown'] > 0 then
                     local msg = strutil.replace_variables(config['msg-player-naked-countdown'], {task.player.name, task.delay, task.duration})
-                    rendering.draw_text{text = msg, surface = task.player.surface, target = task.player.character, time_to_live = 60, forces = {task.player.force}, color = constants.bad, scale_with_zoom = true, alignment = 'center', target_offset={0, -2.5}}
+                    showTextOnPlayer(msg, task.player)
                 end
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
@@ -145,8 +227,25 @@ local function onTick(event)
                     task.player.force.print(strutil.replace_variables(config['msg-player-naked-end'], {task.player.name}), constants.good)
                 end
             end
-        elseif task.action == 'welcome' then
-            game.print('SilentStorm Integration Helper initialized')
+        elseif task.action == 'disconnect_wires' then
+            if task.delay == 0 then
+                map.disconnect_wires_impl(task)
+            else
+                if #config['msg-map-snap-wires-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-map-snap-wires-countdown'], {task.delay, task.range, strutil.get_gps_tag(task.surface, task.position)})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    for _, plr in pairs(game.players) do
+                        if plr.force == task.force then
+                            showTextOnPlayer(msg, plr, constants.bad, scale)
+                        end
+                    end
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         else
             game.print('WARNING! Event ' .. (task.action and task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -207,11 +306,11 @@ local function help()
     enemy_arty: surface, force, position (0,0), range (random 500 - 5000), max (random 1 - 10), chance (random 10 - 100)
     remove_entity: surface, force, position (0, 0), range (random 40 - 200), entity name (randomly selected), max (random 5 - 20), chance (random 10 - 100)
     reset_recipe: surface, force, position (entire surface), range (500), chance (2), max_count (100)
-    biter_revive: chance (random 10 - 100), duration (random 30 - 180), surface (any), position (anywhere), range (anywhere)
-    snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80)
-    modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
-    modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100)
-    on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 4 - 80, chance (80)
+    biter_revive: chance (random 10 - 100), duration (random 30 - 180), surface (any), position (anywhere), range (anywhere), delay (0 seconds)
+    snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80), delay (0 seconds)
+    modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
+    modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
+    on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 4 - 80, chance (80), delay (0 seconds)
     barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds) ['random' or numeric value in seconds], chance (90), delay (0), homing (true) valid values: [true, false], random_target (true) valid values: [true, false]
     dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
     cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), duration(0 seconds), countdown (false) valid values [true, false]

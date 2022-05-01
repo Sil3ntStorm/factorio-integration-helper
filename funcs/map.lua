@@ -162,7 +162,7 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
                 if tgtPos2.position then
                     tgtPos2 = tgtPos2.position
                 end
-                local srcPos2 = map.getRandomPositionInRange(srcPos, 5 + count)
+                local srcPos2 = map.getRandomPositionInRange(srcPos, math.min(config['explosive-spawn-range'] + count, config['explosive-spawn-max-range']))
                 surface.create_entity{
                     name = item,
                     position = srcPos2,
@@ -216,25 +216,50 @@ function map.reset_assembler(surface, force, position, range, chance, max_count)
     end
 end
 
-function map.revive_biters_on_death(chance, duration, surface, position, range)
+function map.revive_biters_on_death_impl(task)
+    task.action = 'disable_biter_revive'
+    global.silinthlp_biter_revive = task
+    on_tick_n.add(task.lastTick, task)
+    if #config['msg-map-revive-biters'] > 0 then
+        game.print(strutil.replace_variables(config['msg-map-revive-biters'], {task.chance, task.duration}), task.chance > 0 and constants.bad or constants.neutral)
+    end
+end
+
+function map.revive_biters_on_death(chance, duration, surface, position, range, delay)
+    if surface and not tc.is_surface(surface) then
+        game.print('surface must be a valid surface if specified', constants.error)
+        return
+    end
+    if position and not tc.is_position(position) then
+        game.print('position must be a valid position if specified', constants.error)
+        return
+    end
+    if range and type(range) ~= 'number' then
+        game.print('range must be a number when specified', constants.error)
+        return
+    end
     chance = chance or math.random(10, 100)
     duration = duration or math.random(30, 180)
 
     chance = math.max(0, math.min(chance, 100))
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
 
     local task = {}
-    task['action'] = 'disable_biter_revive'
+    task['action'] = 'enable_biter_revive'
     task['chance'] = chance
     task['surface'] = surface
     task['position'] = position
     task['range'] = range
-    task['ends'] = game.tick + duration * 60
-    
-    global.silinthlp_biter_revive = task
-    on_tick_n.add(task.ends, task)
+    task['duration'] = duration
+    task['lastTick'] = game.tick + delay * 60 + duration * 60
+    task['delay'] = delay - 1
 
-    if #config['msg-map-revive-biters'] > 0 then
-        game.print(strutil.replace_variables(config['msg-map-revive-biters'], {chance, duration}), chance > 0 and constants.bad or constants.neutral)
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        map.revive_biters_on_death_impl(task)
     end
 end
 
@@ -313,7 +338,32 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
     end
 end
 
-function map.disconnect_wires(surface, force, position, range, circuit, power, chance)
+function map.disconnect_wires_impl(task)
+    local result = task.surface.find_entities_filtered{position = task.position, radius = task.range, force = task.force}
+    local count = 0
+    local count_pwr = 0
+    for _, ent in pairs(result) do
+        if math.random(1, 100) <= task.chance then
+            if task.circuit and ent.circuit_connected_entities then
+                count = count + #ent.circuit_connected_entities.green + #ent.circuit_connected_entities.red
+                ent.disconnect_neighbour(defines.wire_type.red)
+                ent.disconnect_neighbour(defines.wire_type.green)
+            end
+            if task.power then
+                local old_id = ent.electric_network_id
+                ent.disconnect_neighbour(defines.wire_type.copper)
+                if ent.electric_network_id ~= old_id then
+                    count_pwr = count_pwr + 1
+                end
+            end
+        end
+    end
+    if #config['msg-map-snap-wires'] > 0 then
+        task.force.print(strutil.replace_variables(config['msg-map-snap-wires'], {count, count_pwr, task.range, strutil.get_gps_tag(task.surface, task.position)}), count + count_pwr > 0 and constants.bad or constants.neutral)
+    end
+end
+
+function map.disconnect_wires(surface, force, position, range, circuit, power, chance, delay)
     if not tc.is_surface(surface) or not tc.is_force(force) or not tc.is_position(position) then
         game.print('Invalid / missing parameters: surface, force and position are required', constants.error)
         return
@@ -324,6 +374,9 @@ function map.disconnect_wires(surface, force, position, range, circuit, power, c
 
     chance = math.max(1, math.min(100, chance))
 
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
     if circuit ~= true and circuit ~= false then
         circuit = true
     end
@@ -331,27 +384,21 @@ function map.disconnect_wires(surface, force, position, range, circuit, power, c
         power = true
     end
 
-    local result = surface.find_entities_filtered{position = position, radius = range, force = force}
-    local count = 0
-    local count_pwr = 0
-    for _, ent in pairs(result) do
-        if math.random(1, 100) <= chance then
-            if circuit and ent.circuit_connected_entities then
-                count = count + #ent.circuit_connected_entities.green + #ent.circuit_connected_entities.red
-                ent.disconnect_neighbour(defines.wire_type.red)
-                ent.disconnect_neighbour(defines.wire_type.green)
-            end
-            if power then
-                local old_id = ent.electric_network_id
-                ent.disconnect_neighbour(defines.wire_type.copper)
-                if ent.electric_network_id ~= old_id then
-                    count_pwr = count_pwr + 1
-                end
-            end
-        end
-    end
-    if #config['msg-map-snap-wires'] > 0 then
-        force.print(strutil.replace_variables(config['msg-map-snap-wires'], {count, count_pwr, range, strutil.get_gps_tag(surface, position)}), count + count_pwr > 0 and constants.bad or constants.neutral)
+    local task = {}
+    task['action'] = 'disconnect_wires'
+    task['surface'] = surface
+    task['force'] = force
+    task['position'] = position
+    task['range'] = range
+    task['chance'] = chance
+    task['power'] = power
+    task['circuit'] = circuit
+    task['delay'] = delay - 1
+
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        map.disconnect_wires_impl(task)
     end
 end
 

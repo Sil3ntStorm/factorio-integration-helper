@@ -193,6 +193,15 @@ data:extend({
         default_value = 'Biters have a __1__% chance to respawn on death for __2__ seconds'
     },
     {
+        name = 'sil-ihlp-msg-map-revive-biters-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fcb',
+        default_value = '__3__'
+    },
+    {
         name = 'sil-ihlp-msg-map-revive-biters-end',
         type = 'string-setting',
         setting_type = 'runtime-global',
@@ -238,6 +247,15 @@ data:extend({
         default_value = '__1__ circuit connections and __2__ power connections within __3__ meters around __4__ have been cut'
     },
     {
+        name = 'sil-ihlp-msg-map-snap-wires-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fhb',
+        default_value = '__1__'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',
@@ -256,12 +274,21 @@ data:extend({
         default_value = '__1__ legs are getting weak, they are walking __2__% slower for __3__ seconds'
     },
     {
-        name = 'sil-ihlp-msg-player-walk-speed-end',
+        name = 'sil-ihlp-msg-player-walk-speed-countdown',
         type = 'string-setting',
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
         order = 'gac',
+        default_value = '__2__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-walk-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gad',
         default_value = ''
     },
     {
@@ -283,12 +310,21 @@ data:extend({
         default_value = '__1__ arms are tired, they are crafting __2__% slower for __3__ seconds'
     },
     {
-        name = 'sil-ihlp-msg-player-craft-speed-end',
+        name = 'sil-ihlp-msg-player-craft-speed-countdown',
         type = 'string-setting',
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
         order = 'gbc',
+        default_value = '__2__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-craft-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gbd',
         default_value = '__1__ crafting speed has returned to normal'
     },
     {
@@ -298,7 +334,16 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'gc',
-        default_value = 'Anything within __2__ blocks around __1__ is now on fire (__3__ seconds)'
+        default_value = 'For __3__ seconds, anything within __2__ meters around __1__ will be on fire in __4__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-on-fire-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gcb',
+        default_value = '__1__'
     },
     {
         name = 'sil-ihlp-msg-player-barrage-start',
@@ -425,5 +470,23 @@ data:extend({
         minimum_value = 100,
         maximum_value = 1500,
         order = '8l'
-    }
+    },
+    {
+        name = 'sil-ihlp-explosive-spawn-range',
+        type = 'int-setting',
+        setting_type = 'runtime-global',
+        default_value = 5,
+        minimum_value = 1,
+        maximum_value = 25,
+        order = '9k1'
+    },
+    {
+        name = 'sil-ihlp-explosive-spawn-max-range',
+        type = 'int-setting',
+        setting_type = 'runtime-global',
+        default_value = 75,
+        minimum_value = 10,
+        maximum_value = 150,
+        order = '9k2'
+    },
 })

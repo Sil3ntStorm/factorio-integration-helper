@@ -13,7 +13,36 @@ local proto = fml.include('utils/proto')
 local on_tick_n = require('__flib__.on-tick-n')
 local tc = require('utils/type_check')
 
-function player.modify_walk_speed(player_, modifier, duration, chance)
+function player.modify_walk_speed_impl(task)
+    if not global.silinthlp_walk_speed then
+        global.silinthlp_walk_speed = {}
+    end
+    if global.silinthlp_walk_speed[task.player.name] then
+        -- We already adjusted this player.
+        return
+    end
+    if not task.player.character then
+        -- currently dead? Try again later
+        on_tick_n.add(game.tick + 60, task)
+        return
+    end
+
+    local original = task.player.character_running_speed_modifier
+
+    task['action'] = 'restore_walking_speed'
+    task['original'] = original
+
+    global.silinthlp_walk_speed[task.player.name] = on_tick_n.add(game.tick + (task.duration * 60), task)
+
+    task.player.character_running_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
+    if task.modifier < 100 and #config['msg-player-walk-speed-dec'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-dec'], {task.player.name, 100 - task.modifier, task.duration}), constants.bad)
+    elseif task.modifier >= 100 and #config['msg-player-walk-speed-inc'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-inc'], {task.player.name, task.modifier - 100, task.duration}), constants.good)
+    end
+end
+
+function player.modify_walk_speed(player_, modifier, duration, chance, delay)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
@@ -23,10 +52,15 @@ function player.modify_walk_speed(player_, modifier, duration, chance)
         return
     end
     modifier = modifier or 100
-    -- clamp value
-    modifier = math.max(1, math.min(config['max-walk-speed-modifier'], modifier))
     duration = duration or math.random(10, 60)
     chance = chance or 100
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+
+    -- clamp values
+    modifier = math.max(1, math.min(config['max-walk-speed-modifier'], modifier))
+    chance = math.max(1, math.min(100, chance))
 
     if math.random(1, 100) > chance then
         return
@@ -39,25 +73,50 @@ function player.modify_walk_speed(player_, modifier, duration, chance)
         return
     end
 
-    local original = player_.character_running_speed_modifier
-
     local task = {}
-    task['action'] = 'restore_walking_speed'
+    task['action'] = 'set_walking_speed'
     task['player'] = player_
     task['modifier'] = modifier
-    task['original'] = original
+    task['duration'] = duration
+    task['delay'] = delay - 1
 
-    global.silinthlp_walk_speed[player_.name] = on_tick_n.add(game.tick + (duration * 60), task)
-
-    player_.character_running_speed_modifier = math.max(-0.97, (original * 100 + modifier) / 100 - 1)
-    if modifier < 100 and #config['msg-player-walk-speed-dec'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-walk-speed-dec'], {player_.name, 100 - modifier, duration}), constants.bad)
-    elseif modifier >= 100 and #config['msg-player-walk-speed-inc'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-walk-speed-inc'], {player_.name, modifier - 100, duration}), constants.good)
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        player.modify_walk_speed_impl(task)
     end
 end
 
-function player.modify_craft_speed(player_, modifier, duration, chance)
+function player.modify_craft_speed_impl(task)
+    if not global.silinthlp_craft_speed then
+        global.silinthlp_craft_speed = {}
+    end
+    if global.silinthlp_craft_speed[task.player.name] then
+        -- We already adjusted this player.
+        return
+    end
+    if not task.player.character then
+        -- currently dead? Try again later
+        on_tick_n.add(game.tick + 60, task)
+        return
+    end
+
+    local original = task.player.character_crafting_speed_modifier
+
+    task['action'] = 'restore_crafting_speed'
+    task['original'] = original
+
+    global.silinthlp_craft_speed[task.player.name] = on_tick_n.add(game.tick + (task.duration * 60), task)
+
+    task.player.character_crafting_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
+    if task.modifier < 100 and #config['msg-player-craft-speed-dec'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-dec'], {task.player.name, 100 - task.modifier, task.duration}), constants.bad)
+    elseif task.modifier >= 100 and #config['msg-player-craft-speed-inc'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-inc'], {task.player.name, task.modifier - 100, task.duration}), constants.good)
+    end
+end
+
+function player.modify_craft_speed(player_, modifier, duration, chance, delay)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
@@ -67,10 +126,15 @@ function player.modify_craft_speed(player_, modifier, duration, chance)
         return
     end
     modifier = modifier or 100
-    -- clamp value
-    modifier = math.max(1, math.min(config['max-craft-speed-modifier'], modifier))
     duration = duration or math.random(10, 60)
     chance = chance or 100
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+
+    -- clamp value
+    modifier = math.max(1, math.min(config['max-craft-speed-modifier'], modifier))
+    chance = math.max(1, math.min(100, chance))
 
     if math.random(1, 100) > chance then
         return
@@ -83,21 +147,17 @@ function player.modify_craft_speed(player_, modifier, duration, chance)
         return
     end
 
-    local original = player_.character_crafting_speed_modifier
-
     local task = {}
-    task['action'] = 'restore_crafting_speed'
+    task['action'] = 'set_crafting_speed'
     task['player'] = player_
     task['modifier'] = modifier
-    task['original'] = original
+    task['duration'] = duration
+    task['delay'] = delay - 1
 
-    global.silinthlp_craft_speed[player_.name] = on_tick_n.add(game.tick + (duration * 60), task)
-
-    player_.character_crafting_speed_modifier = math.max(-0.97, (original * 100 + modifier) / 100 - 1)
-    if modifier < 100 and #config['msg-player-craft-speed-dec'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-craft-speed-dec'], {player_.name, 100 - modifier, duration}), constants.bad)
-    elseif modifier >= 100 and #config['msg-player-craft-speed-inc'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-craft-speed-inc'], {player_.name, modifier - 100, duration}), constants.good)
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        player.modify_craft_speed_impl(task)
     end
 end
 
@@ -127,7 +187,7 @@ function player.set_on_fire(player_, range, chance)
     end
 end
 
-function player.on_fire(player_, duration, range, chance)
+function player.on_fire(player_, duration, range, chance, delay)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
@@ -135,23 +195,35 @@ function player.on_fire(player_, duration, range, chance)
     duration = duration or math.random(10, 60)
     range = range or math.random(10, 40)
     chance = chance or 80
-    
+
     range = math.min(80, math.max(4, range))
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
 
     local task = {}
     task['action'] = 'player_on_fire'
     task['player'] = player_
     task['chance'] = chance
     task['range'] = range
-    task['lastTick'] = game.tick + duration * 60
+    task['firstTick'] = game.tick + delay * 60
+    task['lastTick'] = game.tick + delay * 60 + duration * 60
     task['lastPos'] = player_.position
     task['executed'] = game.tick
-    task['nthTick'] = math.max(1, math.floor((range / 2 - 2) / (1 + math.max(player_.character_running_speed_modifier, player_.character_running_speed))))
+    local speed = 1
+    if player_.character then
+        speed = math.max(player_.character_running_speed_modifier, player_.character_running_speed)
+    end
+    task['nthTick'] = math.max(1, math.floor((range / 2 - 2) / (1 + speed)))
 
-    player.set_on_fire(player_, range, chance)
-    on_tick_n.add(game.tick + task.nthTick, task)
     if #config['msg-player-on-fire'] > 0 then
         player_.force.print(strutil.replace_variables(config['msg-player-on-fire'], {player_.name, range, duration}), constants.bad)
+    end
+    if delay == 0 then
+        player.set_on_fire(player_, range, chance)
+        on_tick_n.add(game.tick + task.nthTick, task)
+    else
+        on_tick_n.add(game.tick + 60, task)
     end
 end
 
@@ -167,7 +239,9 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     count = count or math.random(2, 20)
     secondsBetweenVolley = secondsBetweenVolley or math.random(1, 10)
     chance = chance or 90
-    delay = delay or 0
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
     if homing ~= false and homing ~= true then
         homing = true
     end
@@ -366,14 +440,16 @@ function player.dump_inventory(player_, range, chance, delay, duration, pickup)
     range = range or math.random(10, 80)
     chance = chance or math.random(50, 100)
     chance = math.min(100, math.max(1, chance))
-    delay = delay or 0
     duration = duration or 0
     if pickup ~= false and pickup ~= true then
         pickup = false
     end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
 
     if #config['msg-player-dump-inventory'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-dump-inventory'], {player_.name, range, duration}), constants.bad)
+        player_.force.print(strutil.replace_variables(config['msg-player-dump-inventory'], {player_.name, range, duration, delay}), constants.bad)
     end
 
     if delay > 0 then
@@ -429,10 +505,12 @@ function player.cancel_handcraft(player_, chance, delay, duration, countdown)
     end
     chance = chance or math.random(25, 80)
     chance = math.min(100, math.max(1, chance))
-    delay = delay or 0
     duration = duration or 0
     if countdown ~= false and countdown ~= true then
         countdown = false
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
     end
 
     local task = {}
@@ -482,7 +560,9 @@ function player.start_handcraft(player_, item, count, chance, delay)
     chance = math.min(100, math.max(1, chance))
     count = count or math.random(1, 100)
     count = math.min(1000, math.max(1, count))
-    delay = delay or 0
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
 
     local task = {}
     task['action'] = 'start_handcraft'
@@ -574,7 +654,9 @@ function player.get_naked(player_, delay, distance, duration)
         return
     end
 
-    delay = delay or 0
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
     distance = distance or math.random(50, 100)
     duration = duration or math.random(2, 10)
 
