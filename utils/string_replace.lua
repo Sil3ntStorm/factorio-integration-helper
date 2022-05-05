@@ -53,7 +53,12 @@ strutil.replace_variables = function(str, replacements)
 end
 
 strutil.get_gps_tag = function(surface, position)
-    local msg = '[gps=' .. math.floor(position.x + 0.5) .. ',' .. math.floor(position.y + 0.5)
+    local msg = '[gps='
+    if position and position.x and position.y then
+        msg = msg .. math.floor(position.x + 0.5) .. ',' .. math.floor(position.y + 0.5)
+    else
+        msg = msg .. '0,0'
+    end
     if surface.name ~= 'nauvis' then
         msg = msg .. ',' .. surface.name
     end
@@ -67,6 +72,26 @@ strutil.split = function(str, delim)
         table.insert(result, r)
     end)
     return result
+end
+
+strutil.get_random_from_string_or_default = function(str, default_min, default_max)
+    local tmp = strutil.split(str, ':')
+    if tmp[1] == 'random' then
+        tmp[2] = tmp[2] or default_min
+        tmp[3] = tmp[3] or default_max
+        return math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
+    end
+    return math.random(default_min, default_max)
+end
+
+strutil.get_random_from_string_or_value = function(str, default_min, default_max)
+    local tmp = strutil.split(str, ':')
+    if tmp[1] == 'random' then
+        tmp[2] = tmp[2] or default_min
+        tmp[3] = tmp[3] or default_max
+        return math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
+    end
+    return str
 end
 
 return strutil

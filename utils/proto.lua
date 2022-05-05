@@ -30,4 +30,15 @@ function proto.get_projectiles()
     return rval
 end
 
+function proto.get_bullet_ammunition()
+    local result = game.get_filtered_item_prototypes({{filter='type', type='ammo'}})
+    local rval = {}
+    for _, ammo in pairs(result) do
+        if ammo.get_ammo_type().category == 'bullet' then
+            table.insert(rval, ammo.name)
+        end
+    end
+    return rval
+end
+
 return proto

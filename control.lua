@@ -246,6 +246,32 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
+        elseif task.action == 'load_ammunition' then
+            if task.delay == 0 then
+                map.load_ammunition_impl(task)
+            else
+                if #config['msg-map-load-ammo-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-map-load-ammo-countdown'], {{'item-name.' .. task.ammo}, task.delay})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    for _, plr in pairs(game.players) do
+                        local show = true
+                        if task.surface and plr.surface ~= task.surface then
+                            show = false
+                        end
+                        if task.position and task.range and map.getDistance(plr.position, task.position) >= task.range then
+                            show = false
+                        end
+                        if show then
+                            showTextOnPlayer(msg, plr, constants.good, scale)
+                        end
+                    end
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         else
             game.print('WARNING! Event ' .. (task.action and task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -308,6 +334,7 @@ local function help()
     reset_recipe: surface, force, position (entire surface), range (500), chance (2), max_count (100)
     biter_revive: chance (random 10 - 100), duration (random 30 - 180), surface (any), position (anywhere), range (anywhere), delay (0 seconds)
     snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80), delay (0 seconds)
+    load_turrets: surface, force, position (0, 0), range (entire surface), ammo_type (yellow ammo), chance (random 60 - 90 %), count (random 5 - 50) ['random' or numeric value to give same amount to all turrets], replace (false), delay (0 seconds)
     modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
     modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
     on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 4 - 80, chance (80), delay (0 seconds)
@@ -341,6 +368,7 @@ local function onLoad()
         reset_recipe=map.reset_assembler,
         biter_revive=map.revive_biters_on_death,
         snap_wires=map.disconnect_wires,
+        load_turrets=map.load_ammunition,
         modify_walk_speed=fn_player.modify_walk_speed,
         modify_craft_speed=fn_player.modify_craft_speed,
         on_fire=fn_player.on_fire,

@@ -1,4 +1,4 @@
--- Copyright 2022 Sil3ntStorm https://github.com/Sil3ntStorm
+﻿-- Copyright 2022 Sil3ntStorm https://github.com/Sil3ntStorm
 --
 -- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
 
@@ -399,6 +399,92 @@ function map.disconnect_wires(surface, force, position, range, circuit, power, c
         on_tick_n.add(game.tick + 60, task)
     else
         map.disconnect_wires_impl(task)
+    end
+end
+
+function map.load_ammunition_impl(task)
+    local turrets = {}
+    if task.position then
+        turrets = task.surface.find_entities_filtered{type = 'ammo-turret', force = task.force, position = task.position, radius = task.range}
+    else
+        turrets = task.surface.find_entities_filtered{type = 'ammo-turret', force = task.force}
+    end
+    local count = 0
+    local ent_count = 0
+    for _, turret in pairs(turrets) do
+        if math.random(1, 100) <= task.chance then
+            local inv = turret.get_inventory(defines.inventory.turret_ammo)
+            local can_insert = inv.can_insert({name=task.ammo})
+            if inv and (can_insert or task.replace == true) then
+                if not can_insert then
+                    -- dump current ammo
+                    task.surface.spill_item_stack(turret.position, {name=inv[1].name, count=inv[1].count}, false, nil, true)
+                    inv.clear()
+                end
+                local want = math.min(game.item_prototypes[task.ammo].stack_size, math.max(1, strutil.get_random_from_string_or_value(task.count, 5, 50)))
+
+                local done = inv.insert({name=task.ammo, count=want})
+                ent_count = ent_count + (done > 0 and 1 or 0)
+                count = count + done
+            end
+        end
+    end
+    if #config['msg-map-load-ammo'] > 0 then
+        task.force.print(strutil.replace_variables(config['msg-map-load-ammo'], {ent_count, count, {'item-name.' .. task.ammo}, strutil.get_gps_tag(task.surface, task.position), task.position ~= nil and task.range or '∞'}), count > 0 and constants.good or constants.neutral)
+    end
+end
+
+function map.load_ammunition(surface, force, position, range, ammo_type, chance, count, replace, delay)
+    if not tc.is_surface(surface) or not tc.is_force(force) then
+        game.print('Invalid / missing parameters: surface and force are required', constants.error)
+        return
+    end
+    if position ~= nil and not tc.is_position(position) then
+        game.print('Invalid parameters: position must be a valid position if specified', constants.error)
+        return
+    end
+    if type(range) ~= 'number' then
+        range = 50
+    end
+    if type(ammo_type) ~= 'string' then
+        ammo_type = 'firearm-magazine'
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(60, 90)
+    end
+    if type(count) ~= 'number' and not (type(count) == 'string' and strutil.split(count, ':')[1] == 'random') then
+        count = math.random(5, 50)
+    end
+    if type(replace) ~= 'boolean' then
+        replace = false
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+    if not fml.contains(game.item_prototypes, ammo_type) or not fml.contains(proto.get_bullet_ammunition(), ammo_type) then
+        game.print('Invalid parameters: ' .. ammo_type .. ' is not a valid ammunition', constants.error)
+        log('Invalid ammunition type ' .. ammo_type .. ' valid choices: ' .. serpent.line(proto.get_bullet_ammunition()))
+        return
+    end
+
+    chance = math.min(100, math.max(1, chance))
+
+    local task = {}
+    task['action'] = 'load_ammunition'
+    task['surface'] = surface
+    task['force'] = force
+    task['position'] = position
+    task['range'] = range
+    task['ammo'] = ammo_type
+    task['chance'] = chance
+    task['count'] = count
+    task['replace'] = replace
+    task['delay'] = delay - 1
+
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        map.load_ammunition_impl(task)
     end
 end
 

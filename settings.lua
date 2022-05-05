@@ -256,6 +256,24 @@ data:extend({
         default_value = '__1__'
     },
     {
+        name = 'sil-ihlp-msg-map-load-ammo',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fi',
+        default_value = 'Loaded __1__ turrets with a total of __2__ __3__ __5__ meters around __4__'
+    },
+    {
+        name = 'sil-ihlp-msg-map-load-ammo-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fia',
+        default_value = 'Loading turrets with __1__ in __2__ seconds'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',

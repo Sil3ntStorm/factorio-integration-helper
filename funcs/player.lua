@@ -281,12 +281,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
             map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
         end
         if count > 1 then
-            local tmp = strutil.split(secondsBetweenVolley, ':')
-            if tmp[1] == 'random' then
-                tmp[2] = tmp[2] or 1
-                tmp[3] = tmp[3] or 10
-                secondsBetweenVolley = math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
-            end
+            secondsBetweenVolley = strutil.get_random_from_string_or_value(secondsBetweenVolley, 1, 10)
             on_tick_n.add(game.tick + secondsBetweenVolley * 60, task)
         elseif #config['msg-player-barrage-end'] > 0 then
             player_.force.print(config['msg-player-barrage-end'], constants.good)
