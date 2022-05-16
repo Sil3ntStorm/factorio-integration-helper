@@ -677,6 +677,10 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     if not tc.is_player(player_) then
         return
     end
+    if armor_spec and type(armor_spec.name) ~= 'string' then
+        log('Invalid armor spec: ' .. serpent.line(armor_spec))
+        return
+    end
     local inv = nil
     if as_active_armor then
         inv = player_.get_inventory(defines.inventory.character_armor)

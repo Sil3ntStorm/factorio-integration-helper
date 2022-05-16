@@ -48,6 +48,10 @@ end
 
 function map.set_equipment_for_item_on_ground(item_on_ground, equip)
     -- Should be moved out of here maybe?
+    if not item_on_ground or not equip then
+        log('Invalid item or equipment specified')
+        return
+    end
     if not item_on_ground.stack.grid then
         item_on_ground.stack.create_grid()
     end
