@@ -396,11 +396,14 @@ end)
 script.on_load(onLoad)
 script.on_event(defines.events.on_tick, onTick)
 script.on_event(defines.events.on_entity_died, onEntityDied, {{filter='type', type='unit'}, {filter='type', type='turret', mode='or'}})
-script.on_event({defines.events.on_player_created, defines.events.on_player_joined_game}, function(event)
+script.on_event({defines.events.on_player_created, defines.events.on_player_joined_game, defines.events.on_player_respawned}, function(event)
     local plr = game.get_player(event.player_index)
     if plr and plr.connected then
-        plr.print('SilentStorm Integration Helper initialized')
-        if plr.character and plr.character_running_speed_modifier == 1.2 then
+        if event.name ~= defines.events.on_player_respawned then
+            plr.print('SilentStorm Integration Helper initialized')
+        end
+        if plr.character and plr.character_running_speed_modifier > 0 then
+            log('Reset player speed from ' .. plg.character_running_speed_modifier)
             plr.character_running_speed_modifier = 0
         end
     end

@@ -284,7 +284,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
             secondsBetweenVolley = strutil.get_random_from_string_or_value(secondsBetweenVolley, 1, 10)
             on_tick_n.add(game.tick + secondsBetweenVolley * 60, task)
         elseif #config['msg-player-barrage-end'] > 0 then
-            player_.force.print(config['msg-player-barrage-end'], constants.good)
+            player_.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {player_.name}), constants.good)
         end
     end
 end
@@ -603,12 +603,8 @@ function player.get_naked_impl(task, do_print)
         worn_armor['name'] = armor_inv[1].name
         worn_armor['equipment'] = equip
 
-        global.silinthlp_naked = global.silinthlp_naked or {}
-        global.silinthlp_naked[task.player.name] = global.silinthlp_naked[task.player.name] or {name = '', equipment = {}}
-        global.silinthlp_naked[task.player.name].name = armor_inv[1].name
-        global.silinthlp_naked[task.player.name].equipment = equip
-
         if task.duration == 0 then
+            -- Dump on to ground right away due to 0 duration
             local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
             local ent = task.player.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
             map.set_equipment_for_item_on_ground(ent[1], equip)
@@ -619,14 +615,17 @@ function player.get_naked_impl(task, do_print)
     for name, count in pairs(main_inv.get_contents()) do
         local stack = main_inv.find_item_stack(name)
         if stack.type == 'armor' then
-            local equip = player.get_equipment_grid_content(stack)
-            table.insert(extra_armor, {name = stack.name, equipment = equip})
-            if task.duration == 0 then
-                local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
-                local ent = task.player.surface.spill_item_stack(pos, {name = stack.name, count = 1}, false, nil)
-                map.set_equipment_for_item_on_ground(ent[1], equip)
+            for i = 1,count do
+                local equip = player.get_equipment_grid_content(stack)
+                table.insert(extra_armor, {name = stack.name, equipment = equip})
+                if task.duration == 0 then
+                    -- Dump on to ground right away due to 0 duration
+                    local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
+                    local ent = task.player.surface.spill_item_stack(pos, {name = stack.name, count = 1}, false, nil)
+                    map.set_equipment_for_item_on_ground(ent[1], equip)
+                end
+                main_inv.remove(stack)
             end
-            main_inv.remove(stack)
         end
     end
     task_dress['worn'] = worn_armor
@@ -697,9 +696,12 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     pos = pos or map.getRandomPositionInRange(player_.position, 10)
     local ent = player_.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
     if #ent > 0 then
-        map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment)
+        if armor_spec and armor_spec.equipment and #armor_spec.equipment > 0 then
+            map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment)
+        end
         if not leave_on_ground and (inv.can_insert(armor_spec.name) or as_active_armor) then
             if not inv.can_insert(armor_spec.name) then
+                -- Attempt to relocate current armor into main inventory
                 local inserted = player_.get_main_inventory().insert(inv[1])
                 if inserted == 0 then
                     -- No space in main inventory drop old armor
