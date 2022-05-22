@@ -9,7 +9,7 @@ function tchck.is_position(obj)
 end
 
 function tchck.is_surface(obj)
-    return type(obj) == 'table' and type(obj.find_entities_filtered) == 'function'
+    return type(obj) == 'table' and type(obj.daytime) == 'number'
 end
 
 function tchck.is_player(obj)

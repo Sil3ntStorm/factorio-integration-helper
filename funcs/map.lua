@@ -492,4 +492,93 @@ function map.load_ammunition(surface, force, position, range, ammo_type, chance,
     end
 end
 
+function map.advance_rocket_silo_impl(task)
+    local silos = {}
+    if task.position then
+        silos = task.surface.find_entities_filtered{type = 'rocket-silo', force = task.force, position = task.position, radius = task.range}
+    else
+        silos = task.surface.find_entities_filtered{type = 'rocket-silo', force = task.force}
+    end
+
+    local count = 0
+    local parts = 0
+    for _, silo in pairs(silos) do
+        if count < task.max and math.random(1, 100) <= task.chance then
+            local max_value = silo.prototype.rocket_parts_required
+            local want = strutil.get_random_from_string_or_value(task.parts, 10, 75)
+            local get = math.min(max_value, math.max(0, silo.rocket_parts + want))
+            local change = get - silo.rocket_parts
+
+            silo.rocket_parts = get
+            parts = parts + change
+            if change ~= 0 then
+                count = count + 1
+            end
+        end
+    end
+    if #silos == 0 and #config['msg-map-adv-silo-no-result'] > 0 then
+        task.force.print(strutil.replace_variables(config['msg-map-adv-silo-no-result'], {}), constants.neutral)
+    elseif #config['msg-map-adv-silo-end'] > 0 then
+        local color = constants.neutral
+        if parts > 0 then
+            color = constants.good
+        elseif parts < 0 then
+            color = constants.bad
+        end
+        task.force.print(strutil.replace_variables(config['msg-map-adv-silo-end'], {parts, count, task.position ~= nil and task.range or '∞', strutil.get_gps_tag(task.surface, task.position or {x=0, y=0})}), color)
+    end
+end
+
+function map.advance_rocket_silo(surface, force, position, range, parts, max_count, chance, delay)
+    if not tc.is_surface(surface) or not tc.is_force(force) then
+        game.print('Invalid / missing parameters: surface and force are required', constants.error)
+        return
+    end
+    if position ~= nil and not tc.is_position(position) then
+        game.print('Invalid parameters: position must be a valid position if specified', constants.error)
+        return
+    end
+    if type(range) ~= 'number' then
+        range = 50
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(60, 90)
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+    if type(max_count) ~= 'number' then
+        max_count = 1
+    end
+    if type(parts) ~= 'number' and not (type(parts) == 'string' and strutil.split(parts, ':')[1] == 'random') then
+        parts = math.random(10, 75)
+        if math.random(1, 100) <= 5 then
+            parts = parts * -1
+        end
+    end
+    if type(parts) == 'number' then
+        parts = math.max(-100, math.min(parts, 100))
+    end
+
+    local task = {}
+    task['action'] = 'advance_rocket'
+    task['surface'] = surface
+    task['force'] = force
+    task['position'] = position
+    task['range'] = range
+    task['parts'] = parts
+    task['max'] = max_count
+    task['chance'] = chance
+    task['delay'] = math.max(0, delay - 1)
+
+    if delay > 0 then
+        if #config['msg-map-adv-silo'] > 0 then
+            task.force.print(strutil.replace_variables(config['msg-map-adv-silo'], {task.surface.name, strutil.get_gps_tag(task.surface, task.position or {x=0, y=0}), task.position ~= nil and task.range or '∞', task.chance, strutil.split(task.parts, ':')[1], delay}), constants.neutral)
+        end
+        on_tick_n.add(game.tick + 60, task)
+    else
+        map.advance_rocket_silo_impl(task)
+    end
+end
+
 return map

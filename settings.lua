@@ -274,6 +274,42 @@ data:extend({
         default_value = 'Loading turrets with __1__ in __2__ seconds'
     },
     {
+        name = 'sil-ihlp-msg-map-adv-silo',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fjb',
+        default_value = '__4__% chance for rocket silos __3__ meters around __2__ to gain __5__ parts in __6__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-map-adv-silo-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fjb',
+        default_value = 'A total of __1__ rocket parts where added to __2__ rocket silos __3__ meters around __4__'
+    },
+    {
+        name = 'sil-ihlp-msg-map-adv-silo-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fjb',
+        default_value = ''
+    },
+    {
+        name = 'sil-ihlp-msg-map-adv-silo-no-result',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fjc',
+        default_value = 'No rocket silo found'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',
@@ -487,7 +523,7 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'glc',
-        default_value = '__2__'
+        default_value = '__3__'
     },
     {
         name = 'sil-ihlp-teleport-attempts',
