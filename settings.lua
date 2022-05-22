@@ -454,15 +454,6 @@ data:extend({
         default_value = '__1__ treasures have been spotted within __2__ meters around their location'
     },
     {
-        name = 'sil-ihlp-teleport-delay',
-        type = 'int-setting',
-        setting_type = 'runtime-global',
-        default_value = 20,
-        maximum_value = 180,
-        minimum_value = 1,
-        order = '9f'
-    },
-    {
         name = 'sil-ihlp-teleport-attempts',
         type = 'int-setting',
         setting_type = 'runtime-global',

@@ -716,4 +716,24 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     end
 end
 
+function player.vacuum(player_, range, delay, duration, chance)
+    if not tc.is_player(player_) or not player_.connected or not player_.character then
+        game.print('Missing parameters: player is required and player must be alive', constants.error)
+        return
+    end
+    if type(range) ~= 'number' then
+        range = math.random(1, 10)
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+    if type(duration) ~= 'number' then
+        duration = math.random(5, 20)
+    end
+    if type(chance) ~= 'number' then
+        chance = 100
+    end
+
+end
+
 return player
