@@ -272,6 +272,27 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
+        elseif task.action == 'vacuum' then
+            if task.delay == 0 then
+                fn_player.vacuum_impl(task)
+            else
+                if #config['msg-player-vacuum-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-vacuum-countdown'], {task.player.name, task.range, task.delay, task.duration})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, constants.good, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
+        elseif task.action == 'reset-vacuum' then
+            if #config['msg-player-vacuum-end'] > 0 then
+                task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-end'], {task.player.name}), constants.bad)
+            end
+            task.player.character_item_pickup_distance_bonus = task.player.character_item_pickup_distance_bonus - task.range
+            task.player.character_loot_pickup_distance_bonus = task.player.character_loot_pickup_distance_bonus - task.range
         else
             game.print('WARNING! Event ' .. (task.action and task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -343,12 +364,13 @@ local function help()
     cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), duration(0 seconds), countdown (false) valid values [true, false]
     start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
     get_naked: player, delay (0 seconds), distance (random 50 - 100), duration (random 2 - 10 seconds)
+    vacuum: player, range (random 1 - 5), duration (random 5 - 20 seconds) [valid: 1 - 300], chance (random 75 - 95), delay (0 seconds)
     ]])
 end
 
 local function onLoad()
-    remote.remove_interface('sil-integration-helper')
-    remote.add_interface('sil-integration-helper', {
+    remote.remove_interface('silentstorm-integration-helper')
+    remote.add_interface('silentstorm-integration-helper', {
         repair_base=build.repair_base,
         build_ghosts=build.build_ghosts,
         build_bp=build.build_blueprint,
@@ -377,6 +399,7 @@ local function onLoad()
         cancel_hand_craft=fn_player.cancel_handcraft,
         start_hand_craft=fn_player.start_handcraft,
         get_naked=fn_player.get_naked,
+        vacuum=fn_player.vacuum,
         help=help
     })
 end
@@ -396,15 +419,9 @@ end)
 script.on_load(onLoad)
 script.on_event(defines.events.on_tick, onTick)
 script.on_event(defines.events.on_entity_died, onEntityDied, {{filter='type', type='unit'}, {filter='type', type='turret', mode='or'}})
-script.on_event({defines.events.on_player_created, defines.events.on_player_joined_game, defines.events.on_player_respawned}, function(event)
+script.on_event({defines.events.on_player_created, defines.events.on_player_joined_game}, function(event)
     local plr = game.get_player(event.player_index)
     if plr and plr.connected then
-        if event.name ~= defines.events.on_player_respawned then
-            plr.print('SilentStorm Integration Helper initialized')
-        end
-        if plr.character and plr.character_running_speed_modifier > 0 then
-            log('Reset player speed from ' .. plr.character_running_speed_modifier)
-            plr.character_running_speed_modifier = 0
-        end
+        plr.print('SilentStorm Integration Helper initialized')
     end
 end)

@@ -454,6 +454,42 @@ data:extend({
         default_value = '__1__ treasures have been spotted within __2__ meters around their location'
     },
     {
+        name = 'sil-ihlp-msg-player-vacuum',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gla',
+        default_value = '__1__ starts sucking the air in really hard. All items on the ground within __2__ meters are being sucked in (__3__ seconds)'
+    },
+    {
+        name = 'sil-ihlp-msg-player-vacuum-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'glb',
+        default_value = '__1__ ran out of breath and cannot suck in far away items anymore'
+    },
+    {
+        name = 'sil-ihlp-msg-player-vacuum-fail',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'glc',
+        default_value = '__1__ tried to suck the air in really hard but failed miserably'
+    },
+    {
+        name = 'sil-ihlp-msg-player-vacuum-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'glc',
+        default_value = '__2__'
+    },
+    {
         name = 'sil-ihlp-teleport-attempts',
         type = 'int-setting',
         setting_type = 'runtime-global',

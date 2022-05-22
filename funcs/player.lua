@@ -716,7 +716,28 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     end
 end
 
-function player.vacuum(player_, range, delay, duration, chance)
+function player.vacuum_impl(task)
+    local original_item = task.player.character_item_pickup_distance_bonus
+    local original_loot = task.player.character_loot_pickup_distance_bonus
+    task['orig_item'] = original_item
+    task['orig_loot'] = original_loot
+
+    if math.random(1, 100) <= task.chance then
+        task.player.character_item_pickup_distance_bonus = task.player.character_item_pickup_distance_bonus + task.range
+        task.player.character_loot_pickup_distance_bonus = task.player.character_loot_pickup_distance_bonus + task.range
+        local range_value = math.max(task.player.character_item_pickup_distance_bonus, task.player.character_loot_pickup_distance_bonus) + 1
+
+        if #config['msg-player-vacuum'] > 0 then
+            task.player.force.print(strutil.replace_variables(config['msg-player-vacuum'], {task.player.name, range_value, task.duration}), constants.good)
+        end
+        task['action'] = 'reset-vacuum'
+        on_tick_n.add(game.tick + task.duration * 60, task)
+    elseif #config['msg-player-vacuum-fail'] > 0 then
+        task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-fail'], {task.player.name}), constants.neutral)
+    end
+end
+
+function player.vacuum(player_, range, duration, chance, delay)
     if not tc.is_player(player_) or not player_.connected or not player_.character then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
@@ -727,13 +748,29 @@ function player.vacuum(player_, range, delay, duration, chance)
     if type(delay) ~= 'number' then
         delay = 0
     end
-    if type(duration) ~= 'number' then
+    if type(duration) ~= 'number' or duration < 1 then
         duration = math.random(5, 20)
     end
     if type(chance) ~= 'number' then
-        chance = 100
+        chance = math.random(75, 95)
     end
 
+    range = math.abs(range)
+    duration = math.max(1, math.min(300, duration))
+
+    local task = {}
+    task['action'] = 'vacuum'
+    task['player'] = player_
+    task['duration'] = duration
+    task['range'] = range
+    task['chance'] = chance
+    task['delay'] = delay - (delay > 0 and 1 or 0)
+
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        player.vacuum_impl(task)
+    end
 end
 
 return player
