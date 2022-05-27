@@ -227,7 +227,7 @@ function player.on_fire(player_, duration, range, chance, delay)
     end
 end
 
-function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing, randomize_target)
+function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing_count, randomize_target)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
@@ -242,12 +242,13 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     if type(delay) ~= 'number' then
         delay = 0
     end
-    if homing ~= false and homing ~= true then
-        homing = true
+    if type(homing_count) ~= 'number' then
+        homing_count = math.floor(count * 0.25 + 0.5)
     end
     if randomize_target ~= false and randomize_target ~= true then
         randomize_target = true
     end
+    homing_count = math.min(homing_count, count)
 
     if not fml.contains(proto.get_projectiles(), itemToSpawn) then
         game.print(itemToSpawn .. ' is not a valid type!', constants.error)
@@ -263,7 +264,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     task['delay'] = secondsBetweenVolley
     task['itemCount'] = countPerVolley
     task['range'] = range
-    task['homing'] = homing
+    task['homing'] = homing_count
     task['rnd_tgt'] = randomize_target
 
     if #config['msg-player-barrage-start'] > 0 then

@@ -117,7 +117,7 @@ function map.timed_teleport(player, target_surface, position, seconds)
     end
 end
 
-function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing)
+function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing_count)
     if not tc.is_surface(surface) or not tc.is_position(position) or not item then
         game.print('surface, position and item are required', constants.error)
         return
@@ -130,8 +130,8 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     if randomize_target ~= false and randomize_target ~= true then
         randomize_target = true
     end
-    if homing ~= false and homing ~= true then
-        homing = true
+    if type(homing_count) ~= 'number' then
+        homing_count = math.max(1, math.floor(count * 0.25 + 0.5))
     end
 
     if not fml.contains(proto.get_projectiles(), item) then
@@ -139,23 +139,34 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
         return
     end
 
+    local speed_multiplier = 1
     local origTgtPos = {}
     if target.position then
         origTgtPos = target.position
+        if target.prototype.type == 'character' then
+            speed_multiplier = 1 + math.max(target.character_running_speed, target.prototype.running_speed)
+        end
     else
         origTgtPos = target
     end
+    local base_speed = 1
+    if game.map_settings.enemy_evolution.enabled and target.force then
+        base_speed = 1 + target.force.evolution_factor
+    end
+    base_speed = base_speed * 0.9
 
+    local shot = 0
     local srcPos = map.getRandomPositionInRealDistance(position, position_range)
     if count > 0 or math.random(1, 100) <= chance then
         surface.create_entity{
             name = item,
             position = srcPos,
             source_position = srcPos,
-            target = homing and target or origTgtPos,
-            speed = 0.5,
-            max_range = map.getDistance(origTgtPos, srcPos) * 1.25
+            target = homing_count > shot and target or origTgtPos,
+            speed = base_speed * speed_multiplier,
+            max_range = map.getDistance(origTgtPos, srcPos) * 3 * speed_multiplier
         }
+        shot = shot + 1
     end
 
     if count > 1 then
@@ -171,10 +182,11 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
                     name = item,
                     position = srcPos2,
                     source_position = srcPos2,
-                    target = tgtPos,
-                    speed = 0.5,
-                    max_range = math.max(target_range * 2, map.getDistance(tgtPos2, srcPos2) * 1.25)
+                    target = shot < homing_count and target or tgtPos,
+                    speed = base_speed * speed_multiplier,
+                    max_range = math.max(target_range, map.getDistance(tgtPos2, srcPos2)) * 3 * speed_multiplier
                 }
+                shot = shot + 1
             end
         end
     end
