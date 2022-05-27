@@ -37,7 +37,16 @@ local function onTick(event)
             end
             tp.actualTeleport(task.player, task.dest_surface, tp.getTeleportDestinationForPlayer(task.player, task.dest_surface))
         elseif task.action == 'teleport_delay' then
+            if not task.player.valid or not task.player.connected then
+                game.print('Player no longer connected, aborting teleport', constants.error)
+                return
+            end
             if task.delay == 0 then
+                if not task.player.character or not task.player.character.valid then
+                    -- player dead
+                    on_tick_n.add(game.tick + 60, task)
+                    return
+                end
                 local pos = nil
                 if task.position then
                     -- fixed teleport

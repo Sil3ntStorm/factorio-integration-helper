@@ -31,7 +31,7 @@ function teleport.getNonCollidingPosition(surface, position, player, range)
 end
 
 function teleport.checkTeleportLocationValid(surface, position, player)
-    if not tc.is_position(position) or not tc.is_surface(surface) or not tc.is_player(player) then
+    if not tc.is_position(position) or not tc.is_surface(surface) or not tc.is_player(player) or not player.connected or not player.character or not player.character.valid then
         return false
     end
     local chunkPos = {x = position.x / 32, y = position.y / 32}
@@ -77,6 +77,16 @@ function teleport.findRandomTeleportLocationForPlayer(task)
             task.next_action = nil
             on_tick_n.add(game.tick + 1, task)
         end
+        return
+    end
+
+    if not task.player.valid or not task.player.connected then
+        game.print('Player no longer connected, aborting teleport', constants.error)
+        return
+    end
+    if not task.player.valid or not task.player.character or not task.player.character.valid then
+        -- Player dead, try again next time
+        global.silinthlp_teleport[task.player.name].finder = on_tick_n.add(game.tick + 30, task)
         return
     end
 
