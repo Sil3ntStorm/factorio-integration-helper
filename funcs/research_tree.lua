@@ -39,7 +39,7 @@ function research.can_research(force, tech)
             return false
         end
     end
-    return true
+    return not force.technologies[tech].researched
 end
 
 function research.available_research(force)
