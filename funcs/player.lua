@@ -774,4 +774,177 @@ function player.vacuum(player_, range, duration, chance, delay)
     end
 end
 
+function player.get_player_grid_info(task)
+    local grid = nil
+    if task.player.object_name == 'LuaPlayer' then
+        if not task.player.character or not task.player.character.valid then
+            -- player dead, try next time around
+            return
+        end
+        grid = task.player.character.grid
+    elseif task.player.prototype == 'LuaEntity' then
+        grid = task.player.grid
+    end
+    if not grid then
+        return
+    end
+
+    return {shield = {current = grid.shield, max = grid.max_shield}, battery = {current = grid.available_in_batteries, max = grid.battery_capacity}}
+end
+
+function player.set_shields_impl(task)
+    if not task.player or not tc.is_player(task.player) or not task.player.connected or not task.player.valid then
+        return
+    end
+
+    local grid = nil
+    local target = task.player
+    if target.vehicle and target.vehicle.valid and target.vehicle.grid then
+        target = task.player.vehicle
+    end
+
+    if target.object_name == 'LuaPlayer' then
+        if not target.character or not target.character.valid then
+            -- player dead, try next time around
+            return
+        end
+        grid = target.character.grid
+    elseif target.object_name == 'LuaEntity' then
+        grid = target.grid
+    end
+    if not grid then
+        return
+    end
+
+    if grid.max_shield <= 0 then
+        -- No shields
+        if #config['msg-player-shields-no-shield'] then
+            task.player.force.print(strutil.replace_variables(config['msg-player-shields-no-shield'], {task.player.name}), constants.neutral)
+        end
+        return
+    end
+
+    local value = task.percent
+    if not task.absolute then
+        value = grid.shield * (1 + value / 100)
+    else
+        value = grid.max_shield * math.abs(value / 100)
+    end
+    value = math.max(0, math.min(value, grid.max_shield))
+    local remaining = value
+    for _, e in pairs(grid.equipment) do
+        if e.type == 'energy-shield-equipment' and grid.shield ~= value then
+           local cur_shield = math.max(0, math.min(remaining, e.max_shield))
+           remaining = remaining - cur_shield
+           e.shield = cur_shield
+        end
+    end
+end
+
+function player.set_battery_impl(task)
+    if not task.player or not tc.is_player(task.player) or not task.player.connected or not task.player.valid then
+        return
+    end
+
+    local grid = nil
+    local target = task.player
+    if target.vehicle and target.vehicle.valid and target.vehicle.grid then
+        target = task.player.vehicle
+    end
+
+    if target.object_name == 'LuaPlayer' then
+        if not target.character or not target.character.valid then
+            -- player dead, try next time around
+            return
+        end
+        grid = target.character.grid
+    elseif target.object_name == 'LuaEntity' then
+        grid = target.grid
+    end
+    if not grid then
+        return
+    end
+
+    if grid.battery_capacity <= 0 then
+        -- No batteries
+        if #config['msg-player-batt-no-batt'] then
+            task.player.force.print(strutil.replace_variables(config['msg-player-batt-no-batt'], {task.player.name}), constants.neutral)
+        end
+        return
+    end
+
+    local value = task.percent
+    if not task.absolute then
+        value = grid.available_in_batteries * (1 + value / 100)
+    else
+        value = grid.battery_capacity * math.abs(value / 100)
+    end
+    value = math.max(0, math.min(value, grid.battery_capacity))
+    local remaining = value
+    for _, e in pairs(grid.equipment) do
+        if e.type == 'battery-equipment' and grid.available_in_batteries ~= value then
+           local cur_batt = math.max(0, math.min(remaining, e.max_energy))
+           remaining = remaining - cur_batt
+           e.energy = cur_batt
+        end
+    end
+end
+
+function player.discharge_common(kind, player_, percent, chance, delay, is_absolute, duration)
+    if not tc.is_player(player_) or not player_.connected or not player_.character then
+        game.print('Missing parameters: player is required and player must be alive', constants.error)
+        return
+    end
+    if type(percent) ~= 'number' then
+        percent = math.random(-90, 90)
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(50, 100)
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+    if type(is_absolute) ~= 'boolean' then
+        is_absolute = false
+    end
+    if type(duration) ~= 'number' then
+        duration = 0
+    end
+    chance = math.max(-100, math.min(chance, 100))
+    delay = math.max(0, delay)
+    duration = math.max(0, duration)
+    if percent == 0 then
+        percent = math.random(-90, 90)
+    end
+
+    local task = {}
+    task['action'] = 'set_' .. kind
+    task['player'] = player_
+    task['percent'] = is_absolute and math.abs(percent) or percent
+    task['chance'] = chance
+    task['delay'] = math.max(0, delay - 1)
+    task['absolute'] = is_absolute
+    task['duration'] = duration
+    task['end_tick'] = game.tick + delay * 60 + duration * 60
+    task['print'] = true
+
+    if delay == 0 then
+        if kind == 'shields' then
+            player.set_shields_impl(task)
+        else
+            player.set_battery_impl(task)
+        end
+    else
+        on_tick_n.add(game.tick + 60, task)
+    end
+end
+
+function player.discharge_shields(player_, percent, chance, delay, is_absolute, duration)
+    player.discharge_common('shields', player_, percent, chance, delay, is_absolute, duration)
+end
+
+function player.discharge_batteries(player_, percent, chance, delay, is_absolute, duration)
+    player.discharge_common('batteries', player_, percent, chance, delay, is_absolute, duration)
+end
+
 return player

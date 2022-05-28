@@ -522,8 +522,134 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'glc',
+        order = 'gld',
         default_value = '__3__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-dec',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmaa',
+        default_value = '__1__ encountered atmospheric disturbances which reduced their shields to __2__% of capacity'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmab',
+        default_value = '__1__ encountered a powerful force, boosting their shield charge, now sitting at __2__%'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-dec-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmba',
+        default_value = '__1__ encountered atmospheric disturbances reducing their shields to __2__% of capacity for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-inc-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmbb',
+        default_value = '__1__ encountered a powerful force, boosting their shield charge, now sitting at __2__% for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-no-shield',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmc',
+        default_value = '__1__ does not have shields'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gmd',
+        default_value = '__1__ will gain __2__% shields in __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-shields-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gme',
+        default_value = '__1__\'s shields have recovered and are behaving normally again'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnaa',
+        default_value = '__1__ found some extra batteries, increasing their armor charge to __2__% of capacity'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-dec',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnab',
+        default_value = 'A short circuit in __1__\'s armor caused their battery charge to decrease to __2__% of capacity'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-inc-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnba',
+        default_value = '__1__ found some extra batteries, increasing their armor charge to __2__% of capacity for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-dec-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnbb',
+        default_value = 'A short circuit in __1__\'s armor caused their battery charge to decrease to __2__% of capacity for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-no-batt',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnc',
+        default_value = '__1__ does not have any batteries'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gnd',
+        default_value = '__1__ will gain __2__% battery charge in __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-batt-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gne',
+        default_value = '__1__\'s batteries have recovered and are behaving normally again'
     },
     {
         name = 'sil-ihlp-teleport-attempts',

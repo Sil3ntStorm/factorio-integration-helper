@@ -331,6 +331,73 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
+        elseif task.action == 'set_shields' or task.action == 'set_batteries' then
+            if task.delay == 0 then
+                local conf_name = 'msg-player-'
+                if task.action == 'set_shields' then
+                    conf_name = conf_name .. 'shields'
+                else
+                    conf_name = conf_name .. 'batt'
+                end
+                if task.percent < 0 then
+                    conf_name = conf_name .. '-dec'
+                else
+                    conf_name = conf_name .. '-inc'
+                end
+                if task.duration > 0 then
+                    conf_name = conf_name .. '-dur'
+                end
+                if task.print and #config[conf_name] > 0 then
+                    local msg = ''
+                    if task.duration > 0 then
+                        msg = strutil.replace_variables(config[conf_name], {task.player.name, task.percent, task.duration})
+                    else
+                        msg = strutil.replace_variables(config[conf_name], {task.player.name, task.percent})
+                    end
+                    task.player.force.print(msg, task.percent > 0 and constants.good or constants.bad)
+                end
+                task.print = false
+                if task.action == 'set_shields' then
+                    fn_player.set_shields_impl(task)
+                else
+                    fn_player.set_battery_impl(task)
+                end
+                if game.tick < task.end_tick then
+                    on_tick_n.add(game.tick + 30, task)
+                else
+                    -- It's all over
+                    local conf_name = 'msg-player-'
+                    if task.action == 'set_shields' then
+                        conf_name = conf_name .. 'shields'
+                    else
+                        conf_name = conf_name .. 'batt'
+                    end
+                    conf_name = conf_name .. '-end'
+                    log('attempting ' .. conf_name)
+                    if #config[conf_name] > 0 then
+                        local msg = strutil.replace_variables(config[conf_name], {task.player.name})
+                        task.player.force.print(msg, constants.good)
+                    end
+                end
+            else
+                local conf_name = task.action == 'set_shields' and 'msg-player-shields-countdown' or 'msg-player-batt-countdown'
+                if #config[conf_name] > 0 then
+                    local color = constants.neutral
+                    local v = strutil.split(task.percent, ':')[1]
+                    if type(task.percent) == 'number' then
+                        v = task.absolute and math.abs(task.percent) or task.percent
+                        color = v < 0 and constants.bad or constants.good
+                    end
+                    local msg = strutil.replace_variables(config[conf_name], {task.player.name, v, task.delay})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, color, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         else
             game.print('WARNING! Event ' .. (task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -440,6 +507,8 @@ local function onLoad()
         start_hand_craft=fn_player.start_handcraft,
         get_naked=fn_player.get_naked,
         vacuum=fn_player.vacuum,
+        drain_battery=fn_player.discharge_batteries,
+        drain_shield=fn_player.discharge_shields,
         help=help
     })
 end
