@@ -2,11 +2,10 @@
 Version: 0.1.1153
 Date: 2022-02-05
 
+  - This is a BETA release. Please note that things may be broken or cause errors that throw you
+    back to the main menu, losing your save game progress.
+
   Features:
-    - Build blueprint strings (optionally only parts the player has researched)
-    - Build ghosts (optionally only parts the player has researched)
-    - Repair entities
-    - Cancel research
-    - Advance research
-    - Disable research
-    - Enable research
+    - Provides a remote interface to trigger several actions in the game. Documentation of said
+      features will follow at a later time, for now call the help function, which will print
+      the available commands in game for everyone.

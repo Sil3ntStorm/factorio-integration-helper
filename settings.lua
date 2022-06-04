@@ -112,6 +112,24 @@ data:extend({
         default_value = 'Research has been enabled'
     },
     {
+        name = 'sil-ihlp-msg-research-lost',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'bi',
+        default_value = '__2__ has just lost access to the __1__ technology'
+    },
+    {
+        name = 'sil-ihlp-msg-research-nothing',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'bga',
+        default_value = '__1__ no research found'
+    },
+    {
         name = 'sil-ihlp-msg-build-repair',
         type = 'string-setting',
         setting_type = 'runtime-global',

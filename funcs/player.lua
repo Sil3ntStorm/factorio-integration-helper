@@ -910,7 +910,8 @@ function player.discharge_common(kind, player_, percent, chance, delay, is_absol
     if type(duration) ~= 'number' then
         duration = 0
     end
-    chance = math.max(-100, math.min(chance, 100))
+    percent = math.max(-100, math.min(percent, 100))
+    chance = math.max(0, math.min(chance, 100))
     delay = math.max(0, delay)
     duration = math.max(0, duration)
     if percent == 0 then
@@ -945,6 +946,27 @@ end
 
 function player.discharge_batteries(player_, percent, chance, delay, is_absolute, duration)
     player.discharge_common('batteries', player_, percent, chance, delay, is_absolute, duration)
+end
+
+function player.change_body_timer(player_, added_time, chance, delay, max_count)
+    if not tc.is_player(player_) or not player_.connected or not player_.character then
+        game.print('Missing parameters: player is required and player must be alive', constants.error)
+        return
+    end
+    if type(added_time) ~= 'number' then
+        added_time = math.random(10, 30)
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(50, 100)
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+    chance = math.max(0, math.min(chance, 100))
+    delay = math.max(0, delay)
+
+    local task = {}
+
 end
 
 return player

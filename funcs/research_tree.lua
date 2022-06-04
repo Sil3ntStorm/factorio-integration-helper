@@ -8,6 +8,7 @@ local constants = require('constants')
 local config = require('utils/config')
 local strutil = require('utils/string_replace')
 local tc = require('utils/type_check')
+local map = require('funcs/map')
 
 function research.init()
     global.silinthlp_tech = {}
@@ -52,11 +53,24 @@ function research.available_research(force)
     return result
 end
 
+function research.researched_tech(force)
+    local result = {}
+    for _, t in pairs(force.technologies) do
+        if t.researched then
+            result[t.name] = t
+        end
+    end
+    return result
+end
+
 function research.get_random_available_research(force, exclude_current)
     local avail = research.available_research(force)
     local keys = {}
     for k in pairs(avail) do
         table.insert(keys, k)
+    end
+    if #keys == 0 then
+        return
     end
     local result = keys[math.random(1, #keys)]
     if exclude_current and force.current_research and #keys > 1 and force.current_research.name == result then
@@ -66,6 +80,19 @@ function research.get_random_available_research(force, exclude_current)
             tries = tries + 1
         end
     end
+    return avail[result]
+end
+
+function research.get_random_researched_tech(force, exclude_current)
+    local avail = research.researched_tech(force)
+    local keys = {}
+    for k in pairs(avail) do
+        table.insert(keys, k)
+    end
+    if #keys == 0 then
+        return
+    end
+    local result = keys[math.random(1, #keys)]
     return avail[result]
 end
 
@@ -81,6 +108,13 @@ function research.start_research(force, chance)
             prev_name = force.current_research.localised_name
         end
         local selected = research.get_random_available_research(force, true)
+        if not selected then
+            -- Nothing left to research
+            if #config['msg-research-nothing'] then
+                force.print(strutil.replace_variables(config['msg-research-nothing'], {force.name}), constants.neutral)
+            end
+            return
+        end
         if force.research_queue_enabled then
             local queue = force.research_queue or {}
             force.research_queue_enabled = false
@@ -298,6 +332,35 @@ function research.set_arti_speed(force, levels, chance, duration)
 
     if #config['msg-research-arti-speed'] > 0 then
         force.print(strutil.replace_variables(config['msg-research-arti-speed'], {levels, duration}), constants.good)
+    end
+end
+
+function research.unresearch_tech(force, chance)
+    if not tc.is_force(force) then
+        game.print('Force is required', constants.error)
+        return
+    end
+    chance = chance or 50
+    if math.random(1, 100) <= chance then
+        local selected = research.get_random_researched_tech(force)
+        if not selected then
+            -- Nothing left to research
+            if #config['msg-research-nothing'] then
+                force.print(strutil.replace_variables(config['msg-research-nothing'], {force.name}), constants.neutral)
+            end
+            return
+        end
+        for _, s in pairs(game.surfaces) do
+            for _, e in pairs(selected.effects) do
+                if e.type == 'unlock-recipe' then
+                    local x = map.reset_assembler_impl(s, force, nil, nil, 100, 2 ^ 31, e.recipe)
+                end
+            end
+        end
+        force.technologies[selected.name].researched = false
+        if #config['msg-research-lost'] > 0 then
+            force.print(strutil.replace_variables(config['msg-research-lost'], {selected.localised_name, force.name}), constants.bad)
+        end
     end
 end
 

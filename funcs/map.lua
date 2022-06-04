@@ -192,17 +192,8 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     end
 end
 
-function map.reset_assembler(surface, force, position, range, chance, max_count)
-    if not tc.is_surface(surface) or not tc.is_force(force) then
-        game.print('Invalid input parameters. Surface and Force are required', constants.error)
-        return
-    end
-    range = range or 500
-    chance = chance or 2
-    max_count = max_count or 100
-
-    chance = chance * 10
-
+function map.reset_assembler_impl(surface, force, position, range, chance, max_count, recipe)
+    chance = math.max(1, math.min(100, chance)) * 10
     local entities = {}
     if position then
         entities = surface.find_entities_filtered{position=position, radius=range, force=force, to_be_deconstructed=false, type='assembling-machine'}
@@ -211,7 +202,11 @@ function map.reset_assembler(surface, force, position, range, chance, max_count)
     end
     local actual = {}
     for _, e in pairs(entities) do
-        if not e.recipe_locked and e.get_recipe() ~= nil and e.name ~= 'water-well-pump' and #e.get_recipe().ingredients > 0 then
+        if type(recipe) == 'string' then
+            if not e.recipe_locked and e.get_recipe() ~= nil and e.get_recipe().name == recipe then
+                table.insert(actual, e)
+            end
+        elseif not e.recipe_locked and e.get_recipe() ~= nil and e.name ~= 'water-well-pump' and #e.get_recipe().ingredients > 0 then
             table.insert(actual, e)
         end
     end
@@ -226,6 +221,20 @@ function map.reset_assembler(surface, force, position, range, chance, max_count)
             count = count + 1
         end
     end
+
+    return count
+end
+
+function map.reset_assembler(surface, force, position, range, chance, max_count)
+    if not tc.is_surface(surface) or not tc.is_force(force) then
+        game.print('Invalid input parameters. Surface and Force are required', constants.error)
+        return
+    end
+    range = range or 500
+    chance = chance or 2
+    max_count = max_count or 100
+
+    local count = map.reset_assembler_impl(surface, force, position, range, chance, max_count)
 
     if #config['msg-map-reset-assembler'] > 0 then
         force.print(strutil.replace_variables(config['msg-map-reset-assembler'], {count}), count > 0 and constants.bad or constants.neutral)

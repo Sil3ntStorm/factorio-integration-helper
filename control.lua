@@ -373,7 +373,6 @@ local function onTick(event)
                         conf_name = conf_name .. 'batt'
                     end
                     conf_name = conf_name .. '-end'
-                    log('attempting ' .. conf_name)
                     if #config[conf_name] > 0 then
                         local msg = strutil.replace_variables(config[conf_name], {task.player.name})
                         task.player.force.print(msg, constants.good)
@@ -449,6 +448,7 @@ local function help()
     cancel_research: force, chance (50)
     disable_research: force, chance (50), seconds (random 30 - 300)
     random_research: force, chance (50)
+    forget_research: force, chance (50)
     set_arti_speed: force, levels Valid range: 1 to 21, chance (50), duration (random 60 - 180)
     set_arti_range: force, levels Valid range: 1 to 21, chance (50), duration (random 60 - 180)
     set_lab_speed: force, percent change (random 1 - 100 5% chance to be negative) Valid range: -100 to 100, chance (75), duration (random 10 - 180)
@@ -471,6 +471,8 @@ local function help()
     start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
     get_naked: player, delay (0 seconds), distance (random 50 - 100), duration (random 2 - 10 seconds)
     vacuum: player, range (random 1 - 5), duration (random 5 - 20 seconds) [valid: 1 - 300], chance (random 75 - 95), delay (0 seconds)
+    drain_battery: player, percent (random -90 to 90), chance (random 50 - 100), delay (0 seconds), absolute (false) [true, false] whether the value is absolute or relative to current charge, duration (0 seconds) 
+    drain_shield: player, percent (random -90 to 90), chance (random 50 - 100), delay (0 seconds), absolute (false) [true, false] whether the value is absolute or relative to current charge, duration (0 seconds)
     ]])
 end
 
@@ -485,6 +487,7 @@ local function onLoad()
         cancel_research=research.cancel_research,
         disable_research=research.disable_research,
         random_research=research.start_research,
+        forget_research=research.unresearch_tech,
         set_arti_speed=research.set_arti_speed,
         set_arti_range=research.set_arti_range,
         set_lab_speed=research.change_speed,
