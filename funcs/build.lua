@@ -99,6 +99,27 @@ build.build_ghosts = function(surface, force, position, range, chance, ignore_te
                 end
             end
         end
+        -- Handle rails, which for some stupid reason are special
+        local entities = surface.find_entities_filtered{type='rail-remnants', radius=range, position=position}
+        for _, ent in pairs(entities) do
+            if ent.valid then
+                local toBuild = string.sub(ent.name, 1, -10)
+                local isValidType = fml.contains(validTypes, toBuild)
+                if math.random(1, 100) <= chance and string.sub(ent.name, -8) == 'remnants' and (ignore_tech or research.can_build(force, toBuild)) and isValidType then
+                    local res = surface.create_entity{
+                        name = toBuild,
+                        position = ent.position,
+                        direction = ent.direction,
+                        raise_built = true,
+                        move_stuck_players = true,
+                        force = force
+                    }
+                    if res then
+                        count = count + 1
+                    end
+                end
+            end
+        end
     end
 
     if #config['msg-build-ghost'] > 0 then

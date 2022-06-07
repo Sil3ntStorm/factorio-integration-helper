@@ -11,9 +11,11 @@ local strutil = fml.include('utils/string_replace')
 local constants = fml.include('constants')
 local tc = require('utils/type_check')
 
+local blacklisted_vehicle_types = {'locomotive', 'artillery-wagon', 'cargo-wagon', 'fluid-wagon'}
+
 function teleport.getPlayerPrototype(player)
     local player_prototype = player.character.prototype
-    if player.vehicle and player.vehicle ~= 'locomotive' then
+    if player.vehicle and not fml.contains(blacklisted_vehicle_types, player.vehicle.type) then
         player_prototype = player.vehicle.prototype
     end
     return player_prototype
@@ -121,7 +123,7 @@ function teleport.actualTeleport(player, surface, dest)
     local oldPos = player.position
     local oldSur = player.surface
     if player.vehicle then
-        if player.vehicle.type ~= 'locomotive' then
+        if not fml.contains(blacklisted_vehicle_types, player.vehicle.type) then
             player.vehicle.teleport(dest, surface)
         else
             player.vehicle.set_driver(nil)

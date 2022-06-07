@@ -469,7 +469,7 @@ end
 function player.cancel_handcraft_impl(task)
     if game.tick >= task.start_tick then
         local queue = task.player.crafting_queue
-        local sz = fml.actual_size(queue)
+        local sz = queue and fml.actual_size(queue) or 0
         while queue and sz > 0 do
             if math.random(1, 100) <= task.chance then
                 local idx = math.random(1, sz)

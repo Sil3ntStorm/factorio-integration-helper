@@ -172,7 +172,7 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
     if count > 1 then
         for i = 1, count do
             if math.random(1, 100) <= chance then
-                local tgtPos = randomize_target and map.getRandomPositionInRange(origTgtPos, target_range) or (homing and target or origTgtPos)
+                local tgtPos = randomize_target and map.getRandomPositionInRange(origTgtPos, target_range) or (shot < homing_count and target or origTgtPos)
                 local tgtPos2 = tgtPos
                 if tgtPos2.position then
                     tgtPos2 = tgtPos2.position
