@@ -1,12 +1,13 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
-Date: 2022-06-07
+Date: 2022-06-10
 
   Bugfixes:
     - Fixed teleportation not working correctly in some cases.
     - Fixed rails not being constructed by build_ghosts before construction bots were
       researched even though remnants were supposed to be restored.
     - Fixed unrecoverable error with cancel_hand_craft
+    - Fixed missing messages for hand crafting
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0

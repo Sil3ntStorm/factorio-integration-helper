@@ -208,9 +208,35 @@ local function onTick(event)
         elseif task.action == 'welcome' then
             game.print('SilentStorm Integration Helper initialized')
         elseif task.action == 'cancel_handcraft' then
-            fn_player.cancel_handcraft_impl(task)
+            if task.delay == 0 then
+                fn_player.cancel_handcraft_impl(task, true)
+            else
+                if #config['msg-player-cancel-handcraft-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-cancel-handcraft-countdown'], {task.player.name, task.delay, task.duration, task.chance})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, constants.bad, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         elseif task.action == 'start_handcraft' then
-            fn_player.start_handcraft_impl(task)
+            if task.delay == 0 then
+                fn_player.start_handcraft_impl(task)
+            else
+                if #config['msg-player-start-handcraft-countdown'] > 0 then
+                    local msg = strutil.replace_variables(config['msg-player-start-handcraft-countdown'], {task.player.name, task.delay, task.chance})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    showTextOnPlayer(msg, task.player, constants.neutral, scale)
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         elseif task.action == 'get_naked' then
             if task.delay == 0 then
                 fn_player.get_naked_impl(task, true)

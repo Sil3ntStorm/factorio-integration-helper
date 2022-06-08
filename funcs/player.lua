@@ -12,6 +12,7 @@ local fml = require('utils/lua_is_stupid')
 local proto = fml.include('utils/proto')
 local on_tick_n = require('__flib__.on-tick-n')
 local tc = require('utils/type_check')
+local research = fml.include('funcs/research_tree')
 
 function player.modify_walk_speed_impl(task)
     if not global.silinthlp_walk_speed then
@@ -466,44 +467,37 @@ function player.dump_inventory(player_, range, chance, delay, duration, pickup)
 
 end
 
-function player.cancel_handcraft_impl(task)
-    if game.tick >= task.start_tick then
-        local queue = task.player.crafting_queue
-        local sz = queue and fml.actual_size(queue) or 0
-        while queue and sz > 0 do
-            if math.random(1, 100) <= task.chance then
-                local idx = math.random(1, sz)
-                task.player.cancel_crafting{index = idx, count = queue[idx].count}
-                task.count = task.count + queue[idx].count
-            end
-            queue = task.player.crafting_queue
-            sz = queue and fml.actual_size(queue) or 0
+function player.cancel_handcraft_impl(task, do_print)
+    local queue = task.player.crafting_queue
+    local sz = queue and fml.actual_size(queue) or 0
+    while queue and sz > 0 do
+        if math.random(1, 100) <= task.chance then
+            local idx = math.random(1, sz)
+            task.player.cancel_crafting{index = idx, count = queue[idx].count}
+            task.count = task.count + queue[idx].count
         end
-    elseif task.countdown then
+        queue = task.player.crafting_queue
+        sz = queue and fml.actual_size(queue) or 0
     end
 
-    local nextRun = task.countdown and game.tick + 30 or task.start_tick
-    if game.tick < task.start_tick and nextRun > task.start_tick then
-        on_tick_n.add(task.start_tick, task)
-    elseif nextRun < task.end_tick then
-        on_tick_n.add(nextRun, task)
-    else
+    if game.tick + 20 <= task.end_tick then
+        on_tick_n.add(game.tick + 20, task)
+    elseif do_print then
         if #config['msg-player-cancel-handcraft'] > 0 then
-            task.player.force.print(strutil.replace_variables(config['msg-player-cancel-handcraft'], {task.player.name, task.count, task.end_tick - task.start_tick}), constants.bad)
+            task.player.force.print(strutil.replace_variables(config['msg-player-cancel-handcraft'], {task.player.name, task.count, task.duration}), task.count > 0 and constants.bad or constants.neutral)
         end
     end
 end
 
-function player.cancel_handcraft(player_, chance, delay, duration, countdown)
+function player.cancel_handcraft(player_, chance, delay, duration)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
     chance = chance or math.random(25, 80)
     chance = math.min(100, math.max(1, chance))
-    duration = duration or 0
-    if countdown ~= false and countdown ~= true then
-        countdown = false
+    if type(duration) ~= 'number' then
+        duration = 0
     end
     if type(delay) ~= 'number' then
         delay = 0
@@ -514,36 +508,59 @@ function player.cancel_handcraft(player_, chance, delay, duration, countdown)
     task['player'] = player_
     task['chance'] = chance
     task['count'] = 0
-    task['countdown'] = countdown
-    task['start_tick'] = game.tick + delay * 60
-    task['end_tick'] = game.tick + delay * 60 + duration * 60
+    task['delay'] = delay - 1
+    task['duration'] = duration
+    task['end_tick'] = game.tick + 60 * delay + duration * 60
 
     if delay > 0 then
+        if #config['msg-player-cancel-handcraft-start'] > 0 then
+            task.player.force.print(strutil.replace_variables(config['msg-player-cancel-handcraft-start'], {task.player.name, delay, task.duration, task.chance}), constants.bad)
+        end
         on_tick_n.add(game.tick + 60, task)
     else
-        player.cancel_handcraft_impl(task)
+        player.cancel_handcraft_impl(task, true)
     end
 end
 
 function player.start_handcraft_impl(task)
+    local function err()
+        if #config['msg-player-start-handcraft-nothing'] > 0 then
+            task.player.force.print(strutil.replace_variables(config['msg-player-start-handcraft-nothing'], {task.player.name}), constants.neutral)
+        end
+    end
+
     local item = task.item
+    if item and task.player.get_craftable_count(item) == 0 then
+        err()
+        return
+    end
     if not item then
         local choices = {}
         for name, r in pairs(task.player.force.recipes) do
-            if task.player.get_craftable_count(name) > 0 then
+            if task.player.get_craftable_count(name) > 0 and research.can_build(task.player.force, name) then
                 table.insert(choices, name)
             end
         end
         if fml.actual_size(choices) == 0 then
-            -- TODO: Print an error message maybe? Or pass it up a level to the caller?
-            return nil
+            err()
+            return
         end
 
         item = choices[math.random(1, fml.actual_size(choices))]
     end
-
     if math.random(1, 100) <= task.chance then
-        task.player.begin_crafting{count=task.count, recipe=item}
+        local actual_count = math.min(task.player.get_craftable_count(item), task.count)
+        local done = task.player.begin_crafting{count=actual_count, recipe=item}
+        if #config['msg-player-start-handcraft'] > 0 then
+            local product = task.player.force.recipes[item].products[1].name
+            local result = ''
+            if game.entity_prototypes[product] then
+                result = {'entity-name.' .. product }
+            elseif game.item_prototypes[product] then
+                result = {'item-name.' .. product }
+            end
+            task.player.force.print(strutil.replace_variables(config['msg-player-start-handcraft'], {task.player.name, done, result}), constants.neutral)
+        end
     end
 end
 
@@ -566,10 +583,10 @@ function player.start_handcraft(player_, item, count, chance, delay)
     task['chance'] = chance
     task['count'] = count
     task['item'] = item
-    task['start_tick'] = game.tick + delay * 60
+    task['delay'] = delay - 1
 
     if delay > 0 then
-        on_tick_n.add(game.tick + 60 * delay, task)
+        on_tick_n.add(game.tick + 60, task)
     else
         player.start_handcraft_impl(task)
     end

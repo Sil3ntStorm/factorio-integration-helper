@@ -454,13 +454,49 @@ data:extend({
         default_value = '__1__ is feeling better again. They lost __2__ items'
     },
     {
+        name = 'sil-ihlp-msg-player-cancel-handcraft-start',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gga',
+        default_value = '__1__ might lose some of their crafting queue in __2__ seconds and won\'t be able to handcraft for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-cancel-handcraft-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'ggb',
+        default_value = '__2__'
+    },
+    {
         name = 'sil-ihlp-msg-player-cancel-handcraft',
         type = 'string-setting',
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'gg',
+        order = 'ggc',
         default_value = '__1__ apparently does not need any of the __2__ items they were crafting'
+    },
+    {
+        name = 'sil-ihlp-msg-player-start-handcraft-nothing',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'ghb',
+        default_value = '__1__ is laking the ingredients to craft anything'
+    },
+    {
+        name = 'sil-ihlp-msg-player-start-handcraft-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'ghb',
+        default_value = '__2__'
     },
     {
         name = 'sil-ihlp-msg-player-start-handcraft',
@@ -468,7 +504,7 @@ data:extend({
         setting_type = 'runtime-global',
         auto_trim = true,
         allow_blank = true,
-        order = 'gh',
+        order = 'ghc',
         default_value = '__1__ decided they urgently need __2__ __3__'
     },
     {
