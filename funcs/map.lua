@@ -364,11 +364,16 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
 end
 
 function map.disconnect_wires_impl(task)
-    local result = task.surface.find_entities_filtered{position = task.position, radius = task.range, force = task.force}
+    local result = {}
+    if task.position then
+        result = task.surface.find_entities_filtered{position = task.position, radius = task.range, force = task.force}
+    else
+        result = task.surface.find_entities_filtered{force = task.force}
+    end
     local count = 0
     local count_pwr = 0
     for _, ent in pairs(result) do
-        if math.random(1, 100) <= task.chance then
+        if math.random(1, 1000) <= task.chance then
             if task.circuit and ent.circuit_connected_entities then
                 count = count + #ent.circuit_connected_entities.green + #ent.circuit_connected_entities.red
                 ent.disconnect_neighbour(defines.wire_type.red)
@@ -384,30 +389,38 @@ function map.disconnect_wires_impl(task)
         end
     end
     if #config['msg-map-snap-wires'] > 0 then
-        task.force.print(strutil.replace_variables(config['msg-map-snap-wires'], {count, count_pwr, task.range, strutil.get_gps_tag(task.surface, task.position)}), count + count_pwr > 0 and constants.bad or constants.neutral)
+        task.force.print(strutil.replace_variables(config['msg-map-snap-wires'], {count, count_pwr, task.position ~= nil and task.range or '∞', strutil.get_gps_tag(task.surface, task.position or {x=0,y=0})}), count + count_pwr > 0 and constants.bad or constants.neutral)
     end
 end
 
 function map.disconnect_wires(surface, force, position, range, circuit, power, chance, delay)
-    if not tc.is_surface(surface) or not tc.is_force(force) or not tc.is_position(position) then
-        game.print('Invalid / missing parameters: surface, force and position are required', constants.error)
+    if not tc.is_surface(surface) or not tc.is_force(force) then
+        game.print('Invalid / missing parameters: surface and force are required', constants.error)
+        return
+    end
+    if position ~= nil and not tc.is_position(position) then
+        game.print('Invalid parameters: position must be a valid position if specified', constants.error)
         return
     end
 
-    range = range or math.random(50, 200)
-    chance = chance or math.random(20, 80)
-
-    chance = math.max(1, math.min(100, chance))
-
+    if type(range) ~= 'number' then
+        range = math.random(50, 200)
+    end
+    if type(circuit) ~= 'boolean' then
+        circuit = true
+    end
+    if type(power) ~= 'boolean' then
+        power = true
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(10, 20)
+    end
     if type(delay) ~= 'number' then
         delay = 0
     end
-    if circuit ~= true and circuit ~= false then
-        circuit = true
-    end
-    if power ~= true and power ~= false then
-        power = true
-    end
+
+    chance = math.max(1, math.min(100, chance))
+    chance = math.floor(chance * 10)
 
     local task = {}
     task['action'] = 'disconnect_wires'

@@ -262,7 +262,7 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'fh',
-        default_value = '__1__ circuit connections and __2__ power connections within __3__ meters around __4__ have been cut'
+        default_value = '__1__ circuit connections and __2__ power poles within __3__ meters around __4__ have been cut'
     },
     {
         name = 'sil-ihlp-msg-map-snap-wires-countdown',
