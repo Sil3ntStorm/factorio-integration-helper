@@ -734,6 +734,39 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     end
 end
 
+function player.auto_pickup_impl(task)
+    local nextAfter = 10
+    if not task.player.valid or not task.player.connected or not task.player.character or not task.player.character.valid then
+        -- dead or disconnected
+        if game.tick + nextAfter < task.end_tick then
+            on_tick_n.add(game.tick + nextAfter, task)
+        end
+        return
+    end
+    local result = task.player.surface.find_entities_filtered{name = 'item-on-ground', position = task.player.position, radius = task.range}
+    local inv = task.player.get_main_inventory()
+    if not inv then
+        log('Player has no inventory?!?!')
+        if game.tick + nextAfter < task.end_tick then
+            on_tick_n.add(game.tick + nextAfter, task)
+        end
+        return
+    end
+    for _, e in pairs(result) do
+        if map.getDistance(e.position, task.player.position) <= task.range then
+            if inv.can_insert(e.stack) then
+                local done = inv.insert(e.stack)
+                if done == e.stack.count then
+                    e.destroy()
+                end
+            end
+        end
+    end
+    if game.tick + nextAfter < task.end_tick then
+        on_tick_n.add(game.tick + nextAfter, task)
+    end
+end
+
 function player.vacuum_impl(task)
     local original_item = task.player.character_item_pickup_distance_bonus
     local original_loot = task.player.character_loot_pickup_distance_bonus
@@ -748,6 +781,14 @@ function player.vacuum_impl(task)
         if #config['msg-player-vacuum'] > 0 then
             task.player.force.print(strutil.replace_variables(config['msg-player-vacuum'], {task.player.name, range_value, task.duration}), constants.good)
         end
+        if task.auto_pickup then
+            local pickup_task = {}
+            pickup_task['action'] = 'auto_pickup'
+            pickup_task['player'] = task.player
+            pickup_task['range'] = task.range
+            pickup_task['end_tick'] = game.tick + task.duration * 60
+            on_tick_n.add(game.tick + 10, pickup_task)
+        end
         task['action'] = 'reset-vacuum'
         on_tick_n.add(game.tick + task.duration * 60, task)
     elseif #config['msg-player-vacuum-fail'] > 0 then
@@ -755,7 +796,7 @@ function player.vacuum_impl(task)
     end
 end
 
-function player.vacuum(player_, range, duration, chance, delay)
+function player.vacuum(player_, range, duration, chance, delay, auto_pickup)
     if not tc.is_player(player_) or not player_.connected or not player_.character then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
@@ -772,8 +813,12 @@ function player.vacuum(player_, range, duration, chance, delay)
     if type(chance) ~= 'number' then
         chance = math.random(75, 95)
     end
+    if type(auto_pickup) ~= 'boolean' then
+        auto_pickup = true
+    end
 
     range = math.abs(range)
+    range = math.max(1, math.min(80, range))
     duration = math.max(1, math.min(300, duration))
 
     local task = {}
@@ -783,6 +828,7 @@ function player.vacuum(player_, range, duration, chance, delay)
     task['range'] = range
     task['chance'] = chance
     task['delay'] = delay - (delay > 0 and 1 or 0)
+    task['auto_pickup'] = auto_pickup
 
     if delay > 0 then
         on_tick_n.add(game.tick + 60, task)

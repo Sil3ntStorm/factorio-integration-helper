@@ -423,6 +423,8 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
+        elseif task.action == 'auto_pickup' then
+            fn_player.auto_pickup_impl(task)
         else
             game.print('WARNING! Event ' .. (task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end

@@ -12,6 +12,9 @@ Date: 2022-06-10
   Changes:
     - position is now optional for snap_wires and it is now defaulting to the entire surface
 
+  Features:
+    - Added option to have vacuum command pick up stuff automatically
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2022-06-04
