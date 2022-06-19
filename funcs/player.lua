@@ -228,27 +228,46 @@ function player.on_fire(player_, duration, range, chance, delay)
     end
 end
 
-function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing_count, randomize_target)
+function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing_count, randomize_target, speed_modifier, range_modifier)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
     end
     
-    itemToSpawn = itemToSpawn or 'explosive-rocket'
-    range = range or math.random(10, 50)
-    countPerVolley = countPerVolley or math.random(5, 20)
-    count = count or math.random(2, 20)
+    if type(itemToSpawn) ~= 'string' then
+        itemToSpawn = 'explosive-rocket'
+    end
+    if type(range) ~= 'number' then
+        range = math.random(10, 50)
+    end
+    if type(countPerVolley) ~= 'number' then
+        countPerVolley = math.random(5, 20)
+    end
+    if type(count) ~= 'number' then
+        count = math.random(2, 20)
+    end
     secondsBetweenVolley = secondsBetweenVolley or math.random(1, 10)
-    chance = chance or 90
+    if type(chance) ~= 'number' then
+        chance = 90
+    end
     if type(delay) ~= 'number' then
         delay = 0
     end
     if type(homing_count) ~= 'number' then
         homing_count = math.floor(count * 0.25 + 0.5)
     end
-    if randomize_target ~= false and randomize_target ~= true then
+    if type(randomize_target) ~= 'boolean' then
         randomize_target = true
     end
+    if type(speed_modifier) ~= 'number' then
+        speed_modifier = 1.0
+    end
+    if type(range_modifier) ~= 'number' then
+        range_modifier = 1.0
+    end
+
+    speed_modifier = math.max(0.1, speed_modifier)
+    range_modifier = math.max(0.5, range_modifier)
     homing_count = math.min(homing_count, count)
 
     if not fml.contains(proto.get_projectiles(), itemToSpawn) then
@@ -267,6 +286,8 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     task['range'] = range
     task['homing'] = homing_count
     task['rnd_tgt'] = randomize_target
+    task['speed_modifier'] = speed_modifier
+    task['range_modifier'] = range_modifier
 
     if #config['msg-player-barrage-start'] > 0 then
         if itemToSpawn == 'artillery-projectile' then
@@ -280,7 +301,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
         on_tick_n.add(game.tick + delay * 60, task)
     else
         if math.random(1, 100) <= chance then
-            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
+            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
         end
         if count > 1 then
             secondsBetweenVolley = strutil.get_random_from_string_or_value(secondsBetweenVolley, 1, 10)
@@ -743,7 +764,6 @@ function player.auto_pickup_impl(task)
         end
         return
     end
-    local result = task.player.surface.find_entities_filtered{name = 'item-on-ground', position = task.player.position, radius = task.range}
     local inv = task.player.get_main_inventory()
     if not inv then
         log('Player has no inventory?!?!')
@@ -752,12 +772,26 @@ function player.auto_pickup_impl(task)
         end
         return
     end
+    local result = task.player.surface.find_entities_filtered{name = 'item-on-ground', position = task.player.position, radius = task.range}
+    for _, e in pairs(task.player.surface.find_entities_filtered{type = {'transport-belt', 'underground-belt', 'splitter'}, position = task.player.position, radius = task.range}) do
+        table.insert(result, e)
+    end
     for _, e in pairs(result) do
         if map.getDistance(e.position, task.player.position) <= task.range then
-            if inv.can_insert(e.stack) then
+            if e.name == 'item-on-ground' and inv.can_insert(e.stack) then
                 local done = inv.insert(e.stack)
                 if done == e.stack.count then
                     e.destroy()
+                end
+            else
+                for i = 1, e.get_max_transport_line_index() do
+                    local line = e.get_transport_line(i)
+                    for k = #line, 1, - 1 do
+                        local on_belt = line[k]
+                        if inv.insert(on_belt) == 1 then
+                            line.remove_item(on_belt)
+                        end
+                    end
                 end
             end
         end
@@ -774,8 +808,8 @@ function player.vacuum_impl(task)
     task['orig_loot'] = original_loot
 
     if math.random(1, 100) <= task.chance then
-        task.player.character_item_pickup_distance_bonus = task.player.character_item_pickup_distance_bonus + task.range
-        task.player.character_loot_pickup_distance_bonus = task.player.character_loot_pickup_distance_bonus + task.range
+        task.player.character_item_pickup_distance_bonus = math.max(1, task.player.character_item_pickup_distance_bonus + task.range)
+        task.player.character_loot_pickup_distance_bonus = math.max(1, task.player.character_loot_pickup_distance_bonus + task.range)
         local range_value = math.max(task.player.character_item_pickup_distance_bonus, task.player.character_loot_pickup_distance_bonus) + 1
 
         if #config['msg-player-vacuum'] > 0 then

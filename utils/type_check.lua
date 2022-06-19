@@ -5,7 +5,7 @@ local tchck = {}
 -- safety checks failing in the C++ layer
 
 function tchck.is_position(obj)
-    return type(obj) == 'table' and type(obj.x) == 'number' and type(obj.y) == 'number'
+    return type(obj) == 'table' and ((type(obj.x) == 'number' and type(obj.y) == 'number') or (#obj == 2 and type(obj[1]) == 'number' and type(obj[2]) == 'number'))
 end
 
 function tchck.is_surface(obj)
@@ -17,6 +17,9 @@ function tchck.is_player(obj)
 end
 
 function tchck.is_force(obj)
+    if type(obj) == 'string' then
+        return game.forces[obj] ~= nil
+    end
     return type(obj) == 'table' and type(obj.get_ammo_damage_modifier) == 'function'
 end
 

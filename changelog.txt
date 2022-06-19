@@ -1,4 +1,35 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 2022-06-14
+
+  Important:
+    - You will need to change your calls as some parameters have changed.
+    - Please read the entire changelog of this version carefully!
+
+  Changes:
+    - the order of parameters for the teleportation commands has changed. The surface the
+      player is teleported to is now the last parameter and optional. Previously it was the
+      second mandatory parameter.
+    - Adjusted projectile speed of barrage command to be generally slower and speed up based
+      on evolution and current player speed.
+    - The teleport_distance command has received the delay parameter from teleport_delay_distance
+    - The teleport_delay_distance command has been removed.
+    - The teleport_delay command has been renamed to teleport.
+
+  Features:
+    - Added speed modifier and range modifier parameters to barrage command, allowing to adjust
+      the maximum speed and range of projectiles.
+    - Added target_force parameter to enemy_arty command, to allow to specify the force that
+      the turret gets assigned to.
+
+  Bugfixes:
+    - Fixed vacuum not picking up from belts in automatic mode.
+
+  Notes:
+    - The help command has been removed. See Readme.md for information ahout available commands,
+      their functionality, available parameters and their default values.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2022-06-10
 
@@ -8,6 +39,7 @@ Date: 2022-06-10
       researched even though remnants were supposed to be restored.
     - Fixed unrecoverable error with cancel_hand_craft
     - Fixed missing messages for hand crafting
+    - Fixed start_hand_craft not selecting a valid item to craft
 
   Changes:
     - position is now optional for snap_wires and it is now defaulting to the entire surface

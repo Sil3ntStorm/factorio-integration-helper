@@ -62,62 +62,62 @@ end
 
 --
 
-function map.teleport_random(player, target_surface, distance)
-    if not tc.is_player(player) or not tc.is_surface(target_surface) or type(distance) ~= 'number' then
-        game.print('Missing parameters: player, target_surface, distance are required', constants.error)
+function map.timed_teleport_random(player, distance, seconds, target_surface)
+    if not tc.is_player(player) or type(distance) ~= 'number' then
+        game.print('Missing parameters: player, distance are required', constants.error)
         return
     end
-    local task = {}
-    task['action'] = 'find_teleport_location'
-    task['player'] = player
-    task['dest_surface'] = target_surface
-    task['distance'] = distance
-    task['next_action'] = 'teleport_player'
-
-    on_tick_n.add(game.tick + 1, task)
-end
-
-function map.timed_teleport_random(player, target_surface, distance, seconds)
-    if not tc.is_player(player) or not tc.is_surface(target_surface) or type(distance) ~= 'number' then
-        game.print('Missing parameters: player, target_surface, distance are required', constants.error)
-        return
+    if type(seconds) ~= 'number' then
+        seconds = math.random(1, 10)
     end
-    seconds = seconds or math.random(1, 10)
+    if not target_surface or not tc.is_surface(target_surface) then
+        target_surface = player.surface
+    end
+    seconds = math.ceil(seconds)
 
     local task = {}
-    task['action'] = 'teleport_delay'
+    task['action'] = seconds == 0 and 'find_teleport_location' or 'teleport_delay'
     task['player'] = player
     task['dest_surface'] = target_surface
-    task['delay'] = seconds - 1
+    task['delay'] = math.max(0, seconds - 1)
     task['distance'] = distance
+    if seconds == 0 then
+        task['next_action'] = 'teleport_player'
+    end
 
-    on_tick_n.add(game.tick + 60, task)
-    if #config['msg-map-teleport-countdown'] > 0 then
+    on_tick_n.add(game.tick + math.max(1, math.min(1, seconds) * 60), task)
+    if #config['msg-map-teleport-countdown'] > 0 and seconds >= 1 then
         task.player.force.print(strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, seconds}), constants.neutral)
     end
 end
 
-function map.timed_teleport(player, target_surface, position, seconds)
-    if not tc.is_player(player) or not tc.is_surface(target_surface) or not tc.is_position(position) then
-        game.print('Missing parameters: player, target_surface, position are required', constants.error)
+function map.timed_teleport(player, position, seconds, target_surface)
+    if not tc.is_player(player) or not tc.is_position(position) then
+        game.print('Missing parameters: player and position are required', constants.error)
         return
     end
-    seconds = seconds or math.random(1, 10)
+    if type(seconds) ~= 'number' then
+        seconds = math.random(1, 10)
+    end
+    if not target_surface or not tc.is_surface(target_surface) then
+        target_surface = player.surface
+    end
+    seconds = math.ceil(seconds)
 
     local task = {}
     task['action'] = 'teleport_delay'
     task['dest_surface'] = target_surface
     task['player'] = player
     task['position'] = position
-    task['delay'] = seconds - 1
+    task['delay'] = math.max(0, seconds - 1)
 
-    on_tick_n.add(game.tick + 60, task)
-    if #config['msg-map-teleport-countdown'] > 0 then
+    on_tick_n.add(game.tick + math.max(1, math.min(1, seconds) * 60), task)
+    if #config['msg-map-teleport-countdown'] > 0 and seconds >= 1 then
         task.player.force.print(strutil.replace_variables(config['msg-map-teleport-countdown'], {task.player.name, seconds}), constants.neutral)
     end
 end
 
-function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing_count)
+function map.spawn_explosive(surface, position, item, count, target, chance, target_range, position_range, randomize_target, homing_count, user_speed_modifier, user_range_modifier)
     if not tc.is_surface(surface) or not tc.is_position(position) or not item then
         game.print('surface, position and item are required', constants.error)
         return
@@ -138,22 +138,50 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
         game.print(item .. ' is not a valid type!', constants.error)
         return
     end
+    if type(user_speed_modifier) ~= 'number' then
+        user_speed_modifier = 1.0
+    end
+    if type(user_range_modifier) ~= 'number' then
+        user_range_modifier = 1.0
+    end
+
+    user_speed_modifier = math.max(0.1, user_speed_modifier)
+    user_range_modifier = math.max(0.5, user_range_modifier)
 
     local speed_multiplier = 1
     local origTgtPos = {}
     if target.position then
         origTgtPos = target.position
         if target.prototype.type == 'character' then
-            speed_multiplier = 1 + math.max(target.character_running_speed, target.prototype.running_speed)
+            speed_multiplier = speed_multiplier + math.max(target.character_running_speed, target.prototype.running_speed)
+        end
+        if target.vehicle then
+            speed_multiplier = math.max(target.vehicle.speed, speed_multiplier)
         end
     else
         origTgtPos = target
     end
-    local base_speed = 1
-    if game.map_settings.enemy_evolution.enabled and target.force then
-        base_speed = 1 + target.force.evolution_factor
+    local base_speed = 0.5
+    local evo = 0
+    if target.force then
+        -- seems to be exclusively based on time passed
+        evo = target.force.evolution_factor
     end
-    base_speed = base_speed * 0.9
+    if game.map_settings.enemy_evolution.enabled then
+        evo = math.max(evo, game.forces['enemy'].evolution_factor)
+    end
+    base_speed = math.max(base_speed, evo)
+    local pow_multiplier = 2 ^ (speed_multiplier - 1)
+    local final_speed = base_speed * pow_multiplier * user_speed_modifier
+    if target.prototype then
+        if target.prototype.type == 'character' then
+            final_speed = math.max(target.character_running_speed + 0.2, final_speed)
+        end
+        if target.vehicle then
+            final_speed = math.max(target.vehicle.speed + 0.5, final_speed)
+        end
+    end
+    final_speed = math.max(0.25, final_speed)
 
     local shot = 0
     local srcPos = map.getRandomPositionInRealDistance(position, position_range)
@@ -163,8 +191,8 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
             position = srcPos,
             source_position = srcPos,
             target = homing_count > shot and target or origTgtPos,
-            speed = base_speed * speed_multiplier,
-            max_range = map.getDistance(origTgtPos, srcPos) * 3 * speed_multiplier
+            speed = final_speed,
+            max_range = map.getDistance(origTgtPos, srcPos) * 10 * final_speed * user_range_modifier
         }
         shot = shot + 1
     end
@@ -183,8 +211,8 @@ function map.spawn_explosive(surface, position, item, count, target, chance, tar
                     position = srcPos2,
                     source_position = srcPos2,
                     target = shot < homing_count and target or tgtPos,
-                    speed = base_speed * speed_multiplier,
-                    max_range = math.max(target_range, map.getDistance(tgtPos2, srcPos2)) * 3 * speed_multiplier
+                    speed = final_speed,
+                    max_range = math.max(target_range, map.getDistance(tgtPos2, srcPos2)) * 10 * final_speed * user_range_modifier
                 }
                 shot = shot + 1
             end
@@ -230,9 +258,15 @@ function map.reset_assembler(surface, force, position, range, chance, max_count)
         game.print('Invalid input parameters. Surface and Force are required', constants.error)
         return
     end
-    range = range or 500
-    chance = chance or 2
-    max_count = max_count or 100
+    if type(range) ~= 'number' then
+        range = 500
+    end
+    if type(chance) ~= 'number' then
+        chance = 2
+    end
+    if type(max_count) ~= 'number' then
+        max_count = 100
+    end
 
     local count = map.reset_assembler_impl(surface, force, position, range, chance, max_count)
 
@@ -279,7 +313,7 @@ function map.revive_biters_on_death(chance, duration, surface, position, range, 
     task['range'] = range
     task['duration'] = duration
     task['lastTick'] = game.tick + delay * 60 + duration * 60
-    task['delay'] = delay - 1
+    task['delay'] = math.max(0, delay - 1)
 
     if delay > 0 then
         on_tick_n.add(game.tick + 60, task)
@@ -288,23 +322,34 @@ function map.revive_biters_on_death(chance, duration, surface, position, range, 
     end
 end
 
-function map.enemy_artillery(surface, force, position, range, max, chance)
+function map.enemy_artillery(surface, force, position, range, max, chance, enemy_force)
     if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('surface and force are required', constants.error)
         return
     end
-    position = position or {x=0, y=0}
-    range = range or math.random(500, 5000)
-    max = max or math.random(1, 10)
-    chance = chance or math.random(10, 100)
+    if not position or not tc.is_position(position) then
+        position = {x=0, y=0}
+    end
+    if type(range) ~= 'number' then
+        range = math.random(500, 5000)
+    end
+    if type(max) ~= 'number' then
+        max = math.random(1, 10)
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(10, 100)
+    end
+    if not enemy_force or not tc.is_force(enemy_force) then
+        enemy_force = game.forces['enemy']
+    end
 
-    chance = math.max(0, math.min(chance, 100))
+    chance = math.max(1, math.min(chance, 100))
 
     local found = surface.find_entities_filtered{type='artillery-turret', radius=range, force=force, position=position}
     local cnt = 0
     for _, e in pairs(found) do
         if math.random(1, 100) <= chance then
-            e.force = 'enemy'
+            e.force = enemy_force
             cnt = cnt + 1
         end
         if cnt >= max then
@@ -321,10 +366,18 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
         game.print('surface and force are required', constants.error)
         return
     end
-    position = position or {x = 0, y = 0}
-    range = range or math.random(50, 200)
-    max = max or math.random(5, 20)
-    chance = chance or math.random(25, 80)
+    if not tc.is_position(position) then
+        position = {x = 0, y = 0}
+    end
+    if type(range) ~= 'number' then
+        range = math.random(40, 200)
+    end
+    if type(max) ~= 'number' then
+        max = math.random(5, 20)
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(25, 80)
+    end
 
     local function rndItem()
         local names = proto.get_entity_prototypes()
@@ -431,7 +484,7 @@ function map.disconnect_wires(surface, force, position, range, circuit, power, c
     task['chance'] = chance
     task['power'] = power
     task['circuit'] = circuit
-    task['delay'] = delay - 1
+    task['delay'] = math.max(0, delay - 1)
 
     if delay > 0 then
         on_tick_n.add(game.tick + 60, task)

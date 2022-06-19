@@ -153,7 +153,7 @@ local function onTick(event)
                 task.force.print(config['msg-research-arti-range-end'], constants.bad)
             end
         elseif task.action == 'spawn_explosive' then
-            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing)
+            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
             task.count = task.count - 1
             if task.count > 0 then
                 local delay = task.delay
@@ -466,44 +466,6 @@ local function onEntityDied(event)
     end
 end
 
-local function help()
-    game.print([[Values in parentheses denote the default value if not specified. If applicable the valid range that is enforced for a parameter is listed after the default value. Available functions are:
-    repair_base: surface, force, position, range (15), chance (75), minimum_health_gain (20), maximum_health_gain (150)
-    build_ghosts: surface, force, position, range (20), chance (75), ignore_technology (false), include_remnants (false)
-    build_bp: surface, force, position, blueprint_string, ignore_technology (false)
-    deconstruct: surface, force, position (entire surface), range (500), chance (5), maximum_count (500), ignore_technology (false)
-    gain_research: force, chance (75), percentage (random 10 - 75, 5% chance to decrease) Valid values: -100 to 100
-    cancel_research: force, chance (50)
-    disable_research: force, chance (50), seconds (random 30 - 300)
-    random_research: force, chance (50)
-    forget_research: force, chance (50)
-    set_arti_speed: force, levels Valid range: 1 to 21, chance (50), duration (random 60 - 180)
-    set_arti_range: force, levels Valid range: 1 to 21, chance (50), duration (random 60 - 180)
-    set_lab_speed: force, percent change (random 1 - 100 5% chance to be negative) Valid range: -100 to 100, chance (75), duration (random 10 - 180)
-    teleport_distance: player, destination surface, distance
-    teleport_delay: player, target_surface, position, seconds (random 1 - 10)
-    teleport_delay_distance: player, target_surface, distance, seconds (random 1 - 10)
-    enemy_arty: surface, force, position (0,0), range (random 500 - 5000), max (random 1 - 10), chance (random 10 - 100)
-    remove_entity: surface, force, position (0, 0), range (random 40 - 200), entity name (randomly selected), max (random 5 - 20), chance (random 10 - 100)
-    reset_recipe: surface, force, position (entire surface), range (500), chance (2), max_count (100)
-    biter_revive: chance (random 10 - 100), duration (random 30 - 180), surface (any), position (anywhere), range (anywhere), delay (0 seconds)
-    snap_wires: surface, force, position, range (random 50 - 200), circuit (true) [true, false], power (true) [true, false], chance (random 20 - 80), delay (0 seconds)
-    load_turrets: surface, force, position (0, 0), range (entire surface), ammo_type (yellow ammo), chance (random 60 - 90 %), count (random 5 - 50) ['random' or numeric value to give same amount to all turrets], replace (false), delay (0 seconds)
-    advance_rocket: surface, force, position (0, 0), range (entire surface), parts (random 10 - 75) ['random' or numeric value to give same to every silo. Can be negative to remove parts from silos], chance (random 60-90%), delay (0 seconds)
-    modify_walk_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
-    modify_craft_speed: player, modifier percentage (100) Valid value: 1 - mod setting, duration (random 10 - 60 seconds), chance (100), delay (0 seconds)
-    on_fire: player, duration (random 10 - 60 seconds), range (random 10 - 40) valid range: 4 - 80, chance (80), delay (0 seconds)
-    barrage: player, item (explosive-rocket), range (random 10 - 50), count per shot (random 5 - 20), total shots (random 5 - 20), pause between shots (random 1 - 10 seconds) ['random' or numeric value in seconds], chance (90), delay (0), homing (25% of count) valid values: [number <= count], random_target (true) valid values: [true, false]
-    dump_inv: player, range (random 10 - 80 blocks), chance (random 50 - 100), delay after which dropping starts (0), duration over which to drop inventory (0, instant drop), mark_for_pickup (false) valid values [true, false]
-    cancel_hand_craft: player, chance (random 25 - 80), delay (0 seconds), duration(0 seconds), countdown (false) valid values [true, false]
-    start_hand_craft: player, item name (random item that can be crafted), count (random 1 - 100) valid range: 1 - 1000, chance (100), delay (0 seconds)
-    get_naked: player, delay (0 seconds), distance (random 50 - 100), duration (random 2 - 10 seconds)
-    vacuum: player, range (random 1 - 5), duration (random 5 - 20 seconds) [valid: 1 - 300], chance (random 75 - 95), delay (0 seconds)
-    drain_battery: player, percent (random -90 to 90), chance (random 50 - 100), delay (0 seconds), absolute (false) [true, false] whether the value is absolute or relative to current charge, duration (0 seconds) 
-    drain_shield: player, percent (random -90 to 90), chance (random 50 - 100), delay (0 seconds), absolute (false) [true, false] whether the value is absolute or relative to current charge, duration (0 seconds)
-    ]])
-end
-
 local function onLoad()
     remote.remove_interface('silentstorm-integration-helper')
     remote.add_interface('silentstorm-integration-helper', {
@@ -519,9 +481,8 @@ local function onLoad()
         set_arti_speed=research.set_arti_speed,
         set_arti_range=research.set_arti_range,
         set_lab_speed=research.change_speed,
-        teleport_distance=map.teleport_random,
-        teleport_delay=map.timed_teleport,
-        teleport_delay_distance=map.timed_teleport_random,
+        teleport=map.timed_teleport,
+        teleport_distance=map.timed_teleport_random,
         enemy_arty=map.enemy_artillery,
         remove_entity=map.remove_entities,
         reset_recipe=map.reset_assembler,
@@ -540,7 +501,6 @@ local function onLoad()
         vacuum=fn_player.vacuum,
         drain_battery=fn_player.discharge_batteries,
         drain_shield=fn_player.discharge_shields,
-        help=help
     })
 end
 

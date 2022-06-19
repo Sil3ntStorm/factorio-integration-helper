@@ -74,6 +74,7 @@ function teleport.findRandomTeleportLocationForPlayer(task)
         global.silinthlp_teleport[task.player.name].attempts = global.silinthlp_teleport[task.player.name].attempts + 1
     end
     if global.silinthlp_teleport[task.player.name].location then
+        -- location set, teleport player
         if task.next_action then
             task['action'] = task.next_action
             task.next_action = nil
@@ -97,6 +98,7 @@ function teleport.findRandomTeleportLocationForPlayer(task)
         tgtPos = teleport.getNonCollidingPosition(task.dest_surface, tgtPos, task.player)
     end
     if teleport.checkTeleportLocationValid(task.dest_surface, tgtPos, task.player) then
+        -- Store location for teleport next run
         teleport.setTeleportDestinationForPlayer(task.dest_surface, tgtPos, task.player)
     elseif global.silinthlp_teleport[task.player.name].attempts > config['teleport-attempts'] then
         -- Too many attempts, send player to spawn
