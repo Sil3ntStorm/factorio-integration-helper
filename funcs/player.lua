@@ -165,7 +165,7 @@ end
 function player.set_on_fire(player_, range, chance)
     if not tc.is_player(player_) or not player_.character then
         -- possibly dead right now.
-        return
+        return false
     end
     range = math.min(100, math.max(0, range))
     local x = player_.position.x - range
@@ -186,6 +186,7 @@ function player.set_on_fire(player_, range, chance)
         end
         x = x + 1
     end
+    return true
 end
 
 function player.on_fire(player_, duration, range, chance, delay)
@@ -210,7 +211,7 @@ function player.on_fire(player_, duration, range, chance, delay)
     task['firstTick'] = game.tick + delay * 60
     task['lastTick'] = game.tick + delay * 60 + duration * 60
     task['lastPos'] = player_.position
-    task['executed'] = game.tick
+    task['executed'] = 0
     local speed = 1
     if player_.character then
         speed = math.max(player_.character_running_speed_modifier, player_.character_running_speed)
@@ -221,7 +222,9 @@ function player.on_fire(player_, duration, range, chance, delay)
         player_.force.print(strutil.replace_variables(config['msg-player-on-fire'], {player_.name, range, duration}), constants.bad)
     end
     if delay == 0 then
-        player.set_on_fire(player_, range, chance)
+        if player.set_on_fire(player_, range, chance) then
+            task['executed'] = game.tick
+        end
         on_tick_n.add(game.tick + task.nthTick, task)
     else
         on_tick_n.add(game.tick + 60, task)

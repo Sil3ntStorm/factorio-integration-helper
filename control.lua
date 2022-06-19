@@ -127,15 +127,27 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             else
                 if map.getDistance(task.player.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
-                    fn_player.set_on_fire(task.player, task.range, task.chance)
-                    task['lastPos'] = task.player.position
-                    task['executed'] = game.tick
+                    local ok = fn_player.set_on_fire(task.player, task.range, task.chance)
+                    if ok then
+                        task['lastPos'] = task.player.position
+                        task['executed'] = game.tick
+                    end
                 end
                 if task.player.character then
                     task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
                 else
-                    -- player dead, try again in 20 ticks
+                    -- player dead, try again in 20 ticks and increase duration
                     task['nthTick'] = 20
+                    if task.executed == 0 then
+                        if not task.original_end then
+                            task['original_end'] = task.lastTick
+                        end
+                        task.lastTick = task.lastTick + 20
+                    end
+                end
+                if task.original_end and task.original_end + 60 * 120 < game.tick then
+                    -- 2 minutes after original end, just kill it.
+                    return
                 end
                 if task.lastTick - task.nthTick >= game.tick then
                     on_tick_n.add(game.tick + task.nthTick, task)

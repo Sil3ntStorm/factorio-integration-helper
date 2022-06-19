@@ -24,6 +24,8 @@ Date: 2022-06-14
 
   Bugfixes:
     - Fixed vacuum not picking up from belts in automatic mode.
+    - Fixed player on fire not doing anything if player is dead when called. It will now
+      delay until the player is alive again and then start the flames.
 
   Notes:
     - The help command has been removed. See Readme.md for information ahout available commands,
