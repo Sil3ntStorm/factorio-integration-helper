@@ -88,7 +88,10 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             end
         elseif task.action == 'restore_walking_speed' then
-            task.player.character_running_speed_modifier = task.original
+            if task.player and task.player.character then
+                -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
+                task.player.character_running_speed_modifier = task.original
+            end
             global.silinthlp_walk_speed[task.player.name] = nil
             if #config['msg-player-walk-speed-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-end'], {task.player.name}), constants.neutral)
@@ -109,7 +112,10 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             end
         elseif task.action == 'restore_crafting_speed' then
-            task.player.character_crafting_speed_modifier = task.original
+            if task.player and task.player.character then
+                -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
+                task.player.character_crafting_speed_modifier = task.original
+            end
             global.silinthlp_craft_speed[task.player.name] = nil
             if #config['msg-player-craft-speed-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-end'], {task.player.name}), constants.neutral)
