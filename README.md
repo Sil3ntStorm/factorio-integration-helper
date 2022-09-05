@@ -102,10 +102,10 @@ of choice and the game. Factorio does provide RCON to interface with the game.
     - [Examples](#examples-29)
   - [drain_battery](#drain_battery)
     - [Parameters](#parameters-30)
-    - [Example](#example)
+    - [Examples](#examples-30)
   - [drain_shields](#drain_shields)
     - [Parameters](#parameters-31)
-    - [Example](#example-1)
+    - [Examples](#examples-31)
 
 ## Available Functions
 
@@ -834,7 +834,7 @@ to a specified value or by a specified percentage of their current charge.
 - duration: For how many seconds to keep the battery charge at the specified level.
   Defaults to `0` seconds.
 
-#### Example
+#### Examples
 
 Remove all battery charge from the player armor for 20 seconds:
 
@@ -858,7 +858,7 @@ to a specified value or by a specified percentage of their current charge.
 - duration: For how many seconds to keep the shield charge at the specified level.
   Defaults to `0` seconds.
 
-#### Example
+#### Examples
 
 Remove all shield charge from the player armor for 20 seconds:
 
