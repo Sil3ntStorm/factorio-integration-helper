@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
-Date: 2022-06-14
+Date: 2022-09-14
 
   Important:
     - You will need to change your calls as some parameters have changed.
@@ -26,6 +26,8 @@ Date: 2022-06-14
     - Fixed vacuum not picking up from belts in automatic mode.
     - Fixed player on fire not doing anything if player is dead when called. It will now
       delay until the player is alive again and then start the flames.
+    - Fixed unrecoverable error when the player was dead while a speed modification (crafting,
+      walking) ran out.
 
   Notes:
     - The help command has been removed. See Readme.md for information ahout available commands,
