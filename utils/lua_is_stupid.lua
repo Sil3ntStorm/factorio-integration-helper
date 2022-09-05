@@ -35,4 +35,12 @@ function properLanguagePlease.include(file)
     end
 end
 
+function properLanguagePlease.keys(tbl)
+   local result = {}
+   for k,_ in pairs(tbl) do
+       table.insert(result, k)
+   end
+   return result
+end
+
 return properLanguagePlease

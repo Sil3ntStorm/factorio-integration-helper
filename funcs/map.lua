@@ -11,6 +11,7 @@ local constants = fml.include('constants')
 local proto = fml.include('utils/proto')
 local tp = fml.include('funcs/teleport')
 local tc = require('utils/type_check')
+local mapping = fml.include('utils/mapping')
 
 function map.getDistance(pos, tgt)
     local x = (tgt.x - pos.x) ^ 2
@@ -495,15 +496,30 @@ end
 
 function map.load_ammunition_impl(task)
     local turrets = {}
+    log('supported turrets:' .. serpent.line(mapping.supported_turret_types()))
     if task.position then
-        turrets = task.surface.find_entities_filtered{type = 'ammo-turret', force = task.force, position = task.position, radius = task.range}
+        for _, v in pairs(mapping.supported_turret_types()) do
+            local result = task.surface.find_entities_filtered{type = v, force = task.force, position = task.position, radius = task.range}
+            for _, e in pairs(result) do
+                table.insert(turrets, e)
+            end
+        end
     else
-        turrets = task.surface.find_entities_filtered{type = 'ammo-turret', force = task.force}
+        for _, v in pairs(mapping.supported_turret_types()) do
+            local result = task.surface.find_entities_filtered{type = v, force = task.force}
+            for _, e in pairs(result) do
+                table.insert(turrets, e)
+            end
+        end
     end
     local count = 0
     local ent_count = 0
     for _, turret in pairs(turrets) do
-        if math.random(1, 100) <= task.chance then
+        local gun_to_ammo = mapping.get_gun_ammo_mapping()
+        local lookup_value = gun_to_ammo[turret.name] or gun_to_ammo[turret.type]
+        local valid_ammo = proto.get_ammunition_types(lookup_value)
+        log('Found turret ' .. turret.name .. ' of ' .. turret.type .. ' at ' .. serpent.line(turret.position) .. ' valid ammo types: ' .. serpent.line(valid_ammo))
+        if fml.contains(valid_ammo, task.ammo) and math.random(1, 100) <= task.chance then
             local inv = turret.get_inventory(defines.inventory.turret_ammo)
             local can_insert = inv.can_insert({name=task.ammo})
             if inv and (can_insert or task.replace == true) then
@@ -552,9 +568,9 @@ function map.load_ammunition(surface, force, position, range, ammo_type, chance,
     if type(delay) ~= 'number' then
         delay = 0
     end
-    if not fml.contains(game.item_prototypes, ammo_type) or not fml.contains(proto.get_bullet_ammunition(), ammo_type) then
+    if not fml.contains(game.item_prototypes, ammo_type) or not fml.contains(proto.get_supported_ammo_types(), ammo_type) then
         game.print('Invalid parameters: ' .. ammo_type .. ' is not a valid ammunition', constants.error)
-        log('Invalid ammunition type ' .. ammo_type .. ' valid choices: ' .. serpent.line(proto.get_bullet_ammunition()))
+        log('Invalid ammunition type ' .. ammo_type .. ' valid choices: ' .. serpent.line(proto.get_supported_ammo_types()))
         return
     end
 

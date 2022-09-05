@@ -3,6 +3,8 @@
 -- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
 
 local proto = {}
+local fml = require('utils/lua_is_stupid')
+local mapping = fml.include('utils/mapping')
 
 function proto.get_entity_prototypes()
     local result = game.get_filtered_entity_prototypes({{filter='buildable'}, {filter='minable', mode='and'}, {filter='flag', flag='placeable-player', mode='and'}})
@@ -30,15 +32,25 @@ function proto.get_projectiles()
     return rval
 end
 
-function proto.get_bullet_ammunition()
+function proto.get_ammunition_types(cat)
     local result = game.get_filtered_item_prototypes({{filter='type', type='ammo'}})
     local rval = {}
     for _, ammo in pairs(result) do
-        if ammo.get_ammo_type().category == 'bullet' then
+        if ammo.get_ammo_type().category == cat then
             table.insert(rval, ammo.name)
         end
     end
     return rval
+end
+
+function proto.get_supported_ammo_types()
+    local result = {}
+    for _, v in pairs(mapping.get_gun_ammo_mapping()) do
+        for _, a in pairs(proto.get_ammunition_types(v)) do
+            table.insert(result, a)
+        end
+    end
+    return result
 end
 
 return proto
