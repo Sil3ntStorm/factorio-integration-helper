@@ -268,10 +268,10 @@ local function onTick(event)
             end
         elseif task.action == 'dress_player' then
             local pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
-            fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0)
+            fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0, task.battery_pct, task.shield_pct)
             for _, a in pairs(task.extra) do
                 pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
-                fn_player.give_armor_impl(task.player, a, pos, false, task.distance > 0)
+                fn_player.give_armor_impl(task.player, a, pos, false, task.distance > 0, task.battery_pct, task.shield_pct)
             end
             if task.origin == 'naked' then
                 if #config['msg-player-naked-end-ground'] > 0 and task.distance > 0 then

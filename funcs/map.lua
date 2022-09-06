@@ -47,17 +47,25 @@ function map.getRandomPositionInRealDistance(pos, distance)
     return {x=x, y=y}
 end
 
-function map.set_equipment_for_item_on_ground(item_on_ground, equip)
+function map.set_equipment_for_item_on_ground(item_on_ground, equip, energy_level, shield_level)
     -- Should be moved out of here maybe?
     if not item_on_ground or not equip then
         log('Invalid item or equipment specified')
         return
     end
+    energy_level = energy_level or 100
+    shield_level = shield_level or 100
     if not item_on_ground.stack.grid then
         item_on_ground.stack.create_grid()
     end
     for _, eq in pairs(equip) do
-        item_on_ground.stack.grid.put{name = eq.name, position = eq.position}
+        local itm = item_on_ground.stack.grid.put{name = eq.name, position = eq.position}
+        if itm.max_energy > 0 then
+            itm.energy = eq.energy * (energy_level / 100)
+        end
+        if itm.max_shield > 0 then
+            itm.shield = eq.shield * (shield_level / 100)
+        end
     end
 end
 

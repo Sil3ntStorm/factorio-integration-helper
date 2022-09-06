@@ -21,6 +21,10 @@ Date: 2022-09-14
       the maximum speed and range of projectiles.
     - Added target_force parameter to enemy_arty command, to allow to specify the force that
       the turret gets assigned to.
+    - get_naked now restores the equipment energy to a percentage of the value it had when
+      the armor got removed rather than removing any stored energy. It received two optional
+      parameters battery and shields to configure the percentage of energy retained. Defaults
+      to 50-75% and 0-20% respectively.
 
   Bugfixes:
     - Fixed vacuum not picking up from belts in automatic mode.
@@ -28,6 +32,8 @@ Date: 2022-09-14
       delay until the player is alive again and then start the flames.
     - Fixed unrecoverable error when the player was dead while a speed modification (crafting,
       walking) ran out.
+    - Fixed not removing all armors from player in some situations when calling get_naked.
+    - Fixed armor losing stored energy when it was dumped by dump_inv
 
   Notes:
     - The help command has been removed. See Readme.md for information ahout available commands,

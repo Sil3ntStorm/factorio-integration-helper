@@ -780,6 +780,10 @@ Drops the players armor and optionally denies the player their armor for a speci
   be put back into the armor inventory after the duration has expired.
 - duration: Number of seconds between the armor being removed from the player
   and it being put on the ground. Defaults to a `random value between 2 and 10` seconds.
+- battery: Percentage of battery charge to retain when the armor is returned to the player.
+  Defaults to a `random value between 50 and 75`.
+- shield: Percentage of shield charge to retain when the armor is returned to the player.
+  Defaults to a `random value between 0 and 20`.
 
 #### Examples
 

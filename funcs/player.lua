@@ -622,7 +622,7 @@ function player.get_equipment_grid_content(item_stack)
         return equip
     end
     for _, eq in pairs(item_stack.grid.equipment) do
-        table.insert(equip, {name = eq.name, position = eq.position})
+        table.insert(equip, {name = eq.name, position = eq.position, shield = eq.shield, energy = eq.energy})
     end
     return equip
 end
@@ -639,20 +639,8 @@ function player.get_naked_impl(task, do_print)
     task_dress['player'] = task.player
     task_dress['distance'] = task.distance
     task_dress['origin'] = 'naked'
-    local worn_armor = {}
-    if not armor_inv.is_empty() then
-        local equip = player.get_equipment_grid_content(armor_inv[1])
-        worn_armor['name'] = armor_inv[1].name
-        worn_armor['equipment'] = equip
-
-        if task.duration == 0 then
-            -- Dump on to ground right away due to 0 duration
-            local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
-            local ent = task.player.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
-            map.set_equipment_for_item_on_ground(ent[1], equip)
-        end
-        armor_inv.remove(armor_inv[1])
-    end
+    task_dress['battery_pct'] = task.battery_pct
+    task_dress['shield_pct'] = task.shield_pct
     local extra_armor = {}
     for name, count in pairs(main_inv.get_contents()) do
         local stack = main_inv.find_item_stack(name)
@@ -670,6 +658,20 @@ function player.get_naked_impl(task, do_print)
             end
         end
     end
+    local worn_armor = {}
+    if not armor_inv.is_empty() then
+        local equip = player.get_equipment_grid_content(armor_inv[1])
+        worn_armor['name'] = armor_inv[1].name
+        worn_armor['equipment'] = equip
+
+        if task.duration == 0 then
+            -- Dump on to ground right away due to 0 duration
+            local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
+            local ent = task.player.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
+            map.set_equipment_for_item_on_ground(ent[1], equip)
+        end
+        armor_inv.remove(armor_inv[1])
+    end
     task_dress['worn'] = worn_armor
     task_dress['extra'] = extra_armor
     if task.duration > 0 then
@@ -684,7 +686,7 @@ function player.get_naked_impl(task, do_print)
     end
 end
 
-function player.get_naked(player_, delay, distance, duration)
+function player.get_naked(player_, delay, distance, duration, battery_pct, shield_pct)
     if not tc.is_player(player_) or not player_.character then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
@@ -693,11 +695,23 @@ function player.get_naked(player_, delay, distance, duration)
     if type(delay) ~= 'number' then
         delay = 0
     end
-    distance = distance or math.random(50, 100)
-    duration = duration or math.random(2, 10)
+    if type(distance) ~= 'number' then
+        distance = math.random(50, 100)
+    end
+    if type(duration) ~= 'number' then
+        duration = math.random(2, 10)
+    end
+    if type(battery_pct) ~= 'number' then
+        battery_pct = math.random(50, 75)
+    end
+    if type(shield_pct) ~= 'number' then
+        shield_pct = math.random(0, 20)
+    end
 
     distance = math.abs(distance)
     duration = math.max(0, duration)
+    battery_pct = math.min(100, math.max(0, battery_pct))
+    shield_pct = math.min(100, math.max(0, shield_pct))
 
     local task = {}
     task['action'] = 'get_naked'
@@ -706,6 +720,8 @@ function player.get_naked(player_, delay, distance, duration)
     task['distance'] = distance
     task['duration'] = duration
     task['end_tick'] = game.tick + delay * 60 + duration * 60
+    task['battery_pct'] = battery_pct
+    task['shield_pct'] = shield_pct
 
     if delay > 0 then
         on_tick_n.add(game.tick + 60, task)
@@ -714,7 +730,7 @@ function player.get_naked(player_, delay, distance, duration)
     end
 end
 
-function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave_on_ground)
+function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave_on_ground, battery_pct, shield_pct)
     if not tc.is_player(player_) then
         return
     end
@@ -739,7 +755,7 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     local ent = player_.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
     if #ent > 0 then
         if armor_spec and armor_spec.equipment and #armor_spec.equipment > 0 then
-            map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment)
+            map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment, battery_pct, shield_pct)
         end
         if not leave_on_ground and (inv.can_insert(armor_spec.name) or as_active_armor) then
             if not inv.can_insert(armor_spec.name) then
