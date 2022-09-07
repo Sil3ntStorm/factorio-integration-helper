@@ -34,6 +34,8 @@ Date: 2022-09-14
       walking) ran out.
     - Fixed not removing all armors from player in some situations when calling get_naked.
     - Fixed armor losing stored energy when it was dumped by dump_inv
+    - Fixed unrecoverable error when vacuum tried to pull items from the ground while the player
+      inventory was full.
 
   Notes:
     - The help command has been removed. See Readme.md for information ahout available commands,

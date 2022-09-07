@@ -802,7 +802,7 @@ function player.auto_pickup_impl(task)
                 if done == e.stack.count then
                     e.destroy()
                 end
-            else
+            elseif e.name ~= 'item-on-ground' then
                 for i = 1, e.get_max_transport_line_index() do
                     local line = e.get_transport_line(i)
                     for k = #line, 1, - 1 do
