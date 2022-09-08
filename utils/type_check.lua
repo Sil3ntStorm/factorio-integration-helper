@@ -13,7 +13,7 @@ function tchck.is_surface(obj)
 end
 
 function tchck.is_player(obj)
-    return type(obj) == 'table' and type(obj.is_player) == 'function' and obj.is_player()
+    return type(obj) == 'table' and obj.object_name == 'LuaPlayer' and type(obj.is_player) == 'function' and obj.is_player()
 end
 
 function tchck.is_force(obj)
@@ -21,6 +21,10 @@ function tchck.is_force(obj)
         return game.forces[obj] ~= nil
     end
     return type(obj) == 'table' and type(obj.get_ammo_damage_modifier) == 'function'
+end
+
+function tchck.is_unit(obj)
+    return type(obj) == 'table' and obj.valid and obj.object_name == 'LuaEntity' and obj.type == 'unit'
 end
 
 return tchck

@@ -328,6 +328,33 @@ data:extend({
         default_value = 'No rocket silo found'
     },
     {
+        name = 'sil-ihlp-msg-map-rain',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fka',
+        default_value = '__1__ __2__ are raining within __3__ meters of __4__ for __6__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-map-rain-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fka',
+        default_value = '__2__ rain on __5__ has stopped. It rained __1__ __2__ in total'
+    },
+    {
+        name = 'sil-ihlp-msg-map-rain-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fka',
+        default_value = 'Forecasts indicate __2__ raining on __5__ in __7__ seconds'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',

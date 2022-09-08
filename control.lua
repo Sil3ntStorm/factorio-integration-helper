@@ -11,6 +11,8 @@ local config = require('utils/config')
 local strutil = require('utils/string_replace')
 local tp = require('funcs/teleport')
 local on_tick_n = require('__flib__.on-tick-n')
+local fml = require('utils/lua_is_stupid')
+local mapping = fml.include('utils/mapping')
 
 local function showTextOnPlayer(msg, plr, color, scale)
     if #msg == 0 or not plr or not plr.connected or not plr.character then
@@ -443,6 +445,34 @@ local function onTick(event)
             end
         elseif task.action == 'auto_pickup' then
             fn_player.auto_pickup_impl(task)
+        elseif task.action == 'rain_item' then
+            if task.delay == 0 then
+                map.rain_item_impl(task)
+            else
+                if #config['msg-map-rain-countdown'] > 0 then
+                    local sur = task.entity and task.entity.surface or task.surface
+                    local pos = task.entity and task.entity.position or task.position
+                    local msg = strutil.replace_variables(config['msg-map-rain-countdown'], {task.count, mapping.locale_tuple(task.item), task.range, strutil.get_gps_tag(sur, pos), sur.name, task.duration, task.delay})
+                    local scale = nil
+                    if #msg < 5 then
+                        scale = 1.7
+                    end
+                    for _, plr in pairs(game.players) do
+                        local show = true
+                        if sur and plr.surface ~= task.surface then
+                            show = false
+                        end
+                        if pos and task.range and map.getDistance(plr.position, pos) >= task.range then
+                            show = false
+                        end
+                        if show then
+                            showTextOnPlayer(msg, plr, constants.neutral, scale)
+                        end
+                    end
+                end
+                task.delay = task.delay - 1
+                on_tick_n.add(game.tick + 60, task)
+            end
         else
             game.print('WARNING! Event ' .. (task.action or 'NA') .. ' is not implemented! Please report to SilentStorm at https://github.com/Sil3ntStorm/factorio-integration-helper/issues', constants.error)
         end
@@ -508,6 +538,7 @@ local function onLoad()
         snap_wires=map.disconnect_wires,
         load_turrets=map.load_ammunition,
         advance_rocket=map.advance_rocket_silo,
+        rain_item=map.rain_item,
         modify_walk_speed=fn_player.modify_walk_speed,
         modify_craft_speed=fn_player.modify_craft_speed,
         on_fire=fn_player.on_fire,

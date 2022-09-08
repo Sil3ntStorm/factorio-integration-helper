@@ -692,4 +692,75 @@ function map.advance_rocket_silo(surface, force, position, range, parts, max_cou
     end
 end
 
+function map.rain_item_impl(task)
+    for i = 1, task.per_tick do
+        local sur = task.entity and task.entity.surface or task.surface
+        local center = task.entity and task.entity.position or task.position
+
+        local pos = map.getRandomPositionInRange(center, task.range)
+        local ent = sur.spill_item_stack(pos, {name=task.item, count=1}, false, nil, true)
+        while not ent or #ent < 1 do
+            pos = map.getRandomPositionInRange(center, task.range)
+            ent = sur.spill_item_stack(pos, {name=task.item, count=1}, false, nil, true)
+        end
+    end
+    task['done'] = task.done + task.per_tick
+    if task.done < task.count then
+        on_tick_n.add(game.tick + task.ticks, task)
+    elseif #config['msg-map-rain-end'] > 0 then
+        -- Send finish message
+        local sur = task.entity and task.entity.surface or task.surface
+        local pos = task.entity and task.entity.position or task.position
+        game.print(strutil.replace_variables(config['msg-map-rain-end'], {task.done, mapping.locale_tuple(task.item), task.range, strutil.get_gps_tag(sur, pos), sur.name}), constants.neutral)
+    end
+end
+
+function map.rain_item(surface, position, entity, item, range, count, duration, delay)
+    if not game.item_prototypes[item] then
+        game.print('Invalid item specified', constants.error)
+        return
+    end
+    if not (entity and (tc.is_player(entity) or tc.is_unit(entity))) and not (tc.is_surface(surface) and tc.is_position(position)) then
+        game.print('Invalid / missing parameters: either a moving entity or both a surface and position are required', constants.error)
+        return
+    end
+    if type(range) ~= 'number' then
+        range = 50
+    end
+    if type(count) ~= 'number' then
+        count = math.random(10, 200)
+    end
+    if type(duration) ~= 'number' then
+        duration = math.random(5, 30)
+    end
+    if type(delay) ~= 'number' then
+        delay = 0
+    end
+
+    local task = {}
+    task['action'] = 'rain_item'
+    task['surface'] = surface
+    task['position'] = position
+    task['entity'] = entity
+    task['range'] = range
+    task['item'] = item
+    task['count'] = count
+    task['duration'] = duration
+    task['ticks'] = 30
+    task['per_tick'] = math.max(1, count / (duration * 60 / task.ticks))
+    task['delay'] = math.max(0, delay - 1)
+    task['done'] = 0
+
+    if #config['msg-map-rain'] > 0 then
+        local sur = task.entity and task.entity.surface or task.surface
+        local pos = task.entity and task.entity.position or task.position
+        game.print(strutil.replace_variables(config['msg-map-rain'], {task.count, mapping.locale_tuple(task.item), task.range, strutil.get_gps_tag(sur, pos), sur.name, duration, delay}), constants.neutral)
+    end
+    if delay > 0 then
+        on_tick_n.add(game.tick + 60, task)
+    else
+        map.rain_item_impl(task)
+    end
+end
+
 return map

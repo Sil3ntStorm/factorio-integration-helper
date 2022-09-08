@@ -73,39 +73,42 @@ of choice and the game. Factorio does provide RCON to interface with the game.
   - [advance_rocket](#advance_rocket)
     - [Parameters](#parameters-20)
     - [Examples](#examples-20)
-  - [modify_walk_speed](#modify_walk_speed)
+  - [rain_item](#rain_item)
     - [Parameters](#parameters-21)
     - [Examples](#examples-21)
-  - [modify_craft_speed](#modify_craft_speed)
+  - [modify_walk_speed](#modify_walk_speed)
     - [Parameters](#parameters-22)
     - [Examples](#examples-22)
-  - [on_fire](#on_fire)
+  - [modify_craft_speed](#modify_craft_speed)
     - [Parameters](#parameters-23)
     - [Examples](#examples-23)
-  - [barrage](#barrage)
+  - [on_fire](#on_fire)
     - [Parameters](#parameters-24)
     - [Examples](#examples-24)
-  - [dump_inv](#dump_inv)
+  - [barrage](#barrage)
     - [Parameters](#parameters-25)
     - [Examples](#examples-25)
-  - [cancel_hand_craft](#cancel_hand_craft)
+  - [dump_inv](#dump_inv)
     - [Parameters](#parameters-26)
     - [Examples](#examples-26)
-  - [start_hand_craft](#start_hand_craft)
+  - [cancel_hand_craft](#cancel_hand_craft)
     - [Parameters](#parameters-27)
     - [Examples](#examples-27)
-  - [get_naked](#get_naked)
+  - [start_hand_craft](#start_hand_craft)
     - [Parameters](#parameters-28)
     - [Examples](#examples-28)
-  - [vacuum](#vacuum)
+  - [get_naked](#get_naked)
     - [Parameters](#parameters-29)
     - [Examples](#examples-29)
-  - [drain_battery](#drain_battery)
+  - [vacuum](#vacuum)
     - [Parameters](#parameters-30)
     - [Examples](#examples-30)
-  - [drain_shields](#drain_shields)
+  - [drain_battery](#drain_battery)
     - [Parameters](#parameters-31)
     - [Examples](#examples-31)
+  - [drain_shields](#drain_shields)
+    - [Parameters](#parameters-32)
+    - [Examples](#examples-32)
 
 ## Available Functions
 
@@ -578,6 +581,30 @@ Add rocket parts to rocket silos, advancing (or reverting) their launch progress
 Add 10 cargo rocket sections to every silo within 100 tiles around the player.
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'advance_rocket', plr.surface, plr.force, plr.position, 100, 10, 100)`
+
+### rain_item
+
+Spawns a specified amount of an item onto the ground at a specific location, or at
+the location of a specified entity (either biters or players).
+
+**If entity is provided then surface and position are ignored**
+
+#### Parameters
+- **surface**: The surface on which to rain items. __Ignored if entity is specified__
+- **position**: The position around which to center the items. __Ignored if entity is specified__
+- **entity**: The entity around which to center the spawning of items.
+  __Optional if surface and position are specified__. Takes precedence over surface and position.
+- **item**: Internal game name of the item to spawn. Must be a valid item.
+- range: Number of tiles around the position in which to spawn the specified item.
+- count: How many of the item to spawn. Defaults to a `random value between 10 and 200`.
+- duration: Over how many seconds to spawn the item. Defaults to a `random value between 5 and 30` seconds.
+- delay: Number of seconds before spawning starts.
+
+#### Examples
+
+Drop 100 Fish over the course of 5 seconds within 30 tiles of the specified player.
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'rain_item', nil, nil, plr, 'raw-fish', 30, 100, 5)
 
 ### modify_walk_speed
 
