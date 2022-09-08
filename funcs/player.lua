@@ -13,6 +13,7 @@ local proto = fml.include('utils/proto')
 local on_tick_n = require('__flib__.on-tick-n')
 local tc = require('utils/type_check')
 local research = fml.include('funcs/research_tree')
+local mapping = fml.include('utils/mapping')
 
 function player.modify_walk_speed_impl(task)
     if not global.silinthlp_walk_speed then
@@ -293,12 +294,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     task['range_modifier'] = range_modifier
 
     if #config['msg-player-barrage-start'] > 0 then
-        if itemToSpawn == 'artillery-projectile' then
-            itemToSpawn = 'artillery-shell'
-        elseif itemToSpawn == 'atomic-rocket' then
-            itemToSpawn = 'atomic-bomb'
-        end
-        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {player_.name, countPerVolley, {'item-name.' .. itemToSpawn}, strutil.split(secondsBetweenVolley, ':')[1], count, delay}), constants.bad)
+        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {player_.name, countPerVolley, mapping.locale_tuple(itemToSpawn), strutil.split(secondsBetweenVolley, ':')[1], count, delay}), constants.bad)
     end
     if delay > 0 then
         on_tick_n.add(game.tick + delay * 60, task)
