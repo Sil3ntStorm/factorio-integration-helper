@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
-Date: 2022-09-14
+Date: 2022-09-09
 
   Important:
     - You will need to change your calls as some parameters have changed.
@@ -25,6 +25,7 @@ Date: 2022-09-14
       the armor got removed rather than removing any stored energy. It received two optional
       parameters battery and shields to configure the percentage of energy retained. Defaults
       to 50-75% and 0-20% respectively.
+    - Added new function rain_item to spawn a specified item around a location.
 
   Bugfixes:
     - Fixed vacuum not picking up from belts in automatic mode.
