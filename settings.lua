@@ -514,7 +514,7 @@ data:extend({
         auto_trim = true,
         allow_blank = true,
         order = 'ghb',
-        default_value = '__1__ is laking the ingredients to craft anything'
+        default_value = '__1__ is lacking the ingredients to craft anything'
     },
     {
         name = 'sil-ihlp-msg-player-start-handcraft-countdown',
