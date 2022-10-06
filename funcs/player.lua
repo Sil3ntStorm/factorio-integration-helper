@@ -15,6 +15,23 @@ local tc = require('utils/type_check')
 local research = fml.include('funcs/research_tree')
 local mapping = fml.include('utils/mapping')
 
+function player.get_character(plr)
+    if remote.interfaces['space-exploration'] and remote.interfaces['space-exploration']['get_player_character'] then
+        return remote.call('space-exploration', 'get_player_character', {player = plr})
+    end
+    return plr.character
+end
+
+function player.get_surface(plr)
+    if remote.interfaces['space-exploration'] and remote.interfaces['space-exploration']['get_player_character'] then
+        local real_char = remote.call('space-exploration', 'get_player_character', {player = plr})
+        if real_char then
+            return real_char.surface
+        end
+    end
+    return plr.surface
+end
+
 function player.modify_walk_speed_impl(task)
     if not global.silinthlp_walk_speed then
         global.silinthlp_walk_speed = {}
@@ -23,20 +40,21 @@ function player.modify_walk_speed_impl(task)
         -- We already adjusted this player.
         return
     end
-    if not task.player.character then
+    local char = player.get_character(task.player)
+    if not char then
         -- currently dead? Try again later
         on_tick_n.add(game.tick + 60, task)
         return
     end
 
-    local original = task.player.character_running_speed_modifier
+    local original = char.character_running_speed_modifier
 
     task['action'] = 'restore_walking_speed'
     task['original'] = original
 
     global.silinthlp_walk_speed[task.player.name] = on_tick_n.add(game.tick + (task.duration * 60), task)
 
-    task.player.character_running_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
+    char.character_running_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
     if task.modifier < 100 and #config['msg-player-walk-speed-dec'] > 0 then
         task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-dec'], {task.player.name, 100 - task.modifier, task.duration}), constants.bad)
     elseif task.modifier >= 100 and #config['msg-player-walk-speed-inc'] > 0 then
@@ -49,7 +67,8 @@ function player.modify_walk_speed(player_, modifier, duration, chance, delay)
         game.print('player is required', constants.error)
         return
     end
-    if not player_.character then
+    local char = player.get_character(task.player)
+    if not char then
         game.print('player must have a character', constants.error)
         return
     end
@@ -97,20 +116,21 @@ function player.modify_craft_speed_impl(task)
         -- We already adjusted this player.
         return
     end
-    if not task.player.character then
+    local char = player.get_character(task.player)
+    if not char then
         -- currently dead? Try again later
         on_tick_n.add(game.tick + 60, task)
         return
     end
 
-    local original = task.player.character_crafting_speed_modifier
+    local original = char.character_crafting_speed_modifier
 
     task['action'] = 'restore_crafting_speed'
     task['original'] = original
 
     global.silinthlp_craft_speed[task.player.name] = on_tick_n.add(game.tick + (task.duration * 60), task)
 
-    task.player.character_crafting_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
+    char.character_crafting_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
     if task.modifier < 100 and #config['msg-player-craft-speed-dec'] > 0 then
         task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-dec'], {task.player.name, 100 - task.modifier, task.duration}), constants.bad)
     elseif task.modifier >= 100 and #config['msg-player-craft-speed-inc'] > 0 then
@@ -123,7 +143,8 @@ function player.modify_craft_speed(player_, modifier, duration, chance, delay)
         game.print('player is required', constants.error)
         return
     end
-    if not player_.character then
+    local char = player.get_character(task.player)
+    if not char then
         game.print('player must have a character', constants.error)
         return
     end
@@ -164,23 +185,24 @@ function player.modify_craft_speed(player_, modifier, duration, chance, delay)
 end
 
 function player.set_on_fire(player_, range, chance)
-    if not tc.is_player(player_) or not player_.character then
+    local char = player.get_character(player_)
+    if not tc.is_player(player_) or not char then
         -- possibly dead right now.
         return false
     end
     range = math.min(100, math.max(0, range))
-    local x = player_.position.x - range
-    local y = player_.position.y - range
-    local x2 = player_.position.x + range
-    local y2 = player_.position.y + range
+    local x = char.position.x - range
+    local y = char.position.y - range
+    local x2 = char.position.x + range
+    local y2 = char.position.y + range
     while x < x2 do
         local y3 = y
         while y3 < y2 do
-            if math.random(1, 100) <= chance and map.getDistance(player_.position, {x=x, y=y3}) <= range then
-                player_.surface.create_entity{
+            if math.random(1, 100) <= chance and map.getDistance(char.position, {x=x, y=y3}) <= range then
+                char.surface.create_entity{
                     position = {x = x, y = y3},
                     name = 'fire-flame-on-tree',
-                    target = player_.character
+                    target = char
                 }
             end
             y3 = y3 + 1
@@ -214,8 +236,9 @@ function player.on_fire(player_, duration, range, chance, delay)
     task['lastPos'] = player_.position
     task['executed'] = 0
     local speed = 1
-    if player_.character then
-        speed = math.max(player_.character_running_speed_modifier, player_.character_running_speed)
+    local char = player.get_character(task.player)
+    if char then
+        speed = math.max(char.character_running_speed_modifier, char.character_running_speed)
     end
     task['nthTick'] = math.max(1, math.floor((range / 2 - 2) / (1 + speed)))
 
@@ -300,7 +323,8 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
         on_tick_n.add(game.tick + delay * 60, task)
     else
         if math.random(1, 100) <= chance then
-            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            local real_char = player.get_character(task.player)
+            map.spawn_explosive(real_char.surface, real_char.position, task.item, task.itemCount, real_char, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
         end
         if count > 1 then
             secondsBetweenVolley = strutil.get_random_from_string_or_value(secondsBetweenVolley, 1, 10)
@@ -318,7 +342,8 @@ function player.dump_inventory_done_msg(player_, dropped)
 end
 
 function player.dump_inventory_stack(player_, item, range, do_pickup)
-    if not tc.is_player(player_) or not player_.character or type(item) ~= 'string' or type(range) ~= 'number' then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not real_char or type(item) ~= 'string' or type(range) ~= 'number' then
         return nil
     end
     
@@ -335,10 +360,10 @@ function player.dump_inventory_stack(player_, item, range, do_pickup)
     local count = stack.count
     for i = 1, count do
         local pos = map.getRandomPositionInRange(player_.position, range)
-        local ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
+        local ent = player.get_surface(player_).spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
         while not ent or #ent < 1 do
             pos = map.getRandomPositionInRange(player_.position, range)
-            ent = player_.surface.spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
+            ent = player.get_surface(player_).spill_item_stack(pos, {name=stack.name, count=1}, do_pickup, do_pickup and player_.force or nil, true)
         end
         if stack.type == 'blueprint' or stack.type == 'blueprint-book' or stack.type == 'deconstruction-item' or stack.type == 'upgrade-item' or stack.type == 'item-with-tags' then
             -- just returning nil/empty string for stuff that cannot be exported would have been too complicated I guess...
@@ -372,14 +397,15 @@ function player.dump_inventory_stack(player_, item, range, do_pickup)
 end
 
 function player.dump_inventory_impl(player_, range, chance, endTick, prevRuns, do_pickup)
-    if not player_ or not player_.character or not player_.connected then
+    local real_char = player.get_character(player_)
+    if not player_ or not real_char or not player_.connected then
         -- disconnected or dead
         if tc.is_player(player_) then
             player_.force.print('Player is dead or no longer connected', constants.error)
         end
         return
     end
-    local inv = player_.character.get_main_inventory()
+    local inv = real_char.get_main_inventory()
     local content = inv.get_contents()
     local stackCount = fml.actual_size(content)
 
@@ -450,7 +476,8 @@ end
 
 -- public entry point
 function player.dump_inventory(player_, range, chance, delay, duration, pickup)
-    if not tc.is_player(player_) or not player_.valid or not player_.character then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not player_.valid or not real_char then
         game.print('player is required and must be a valid player with a character', constants.error)
         return
     end
@@ -628,8 +655,9 @@ function player.get_naked_impl(task, do_print)
         game.print('Player died or disconnected', constants.error)
         return
     end
-    local armor_inv = task.player.get_inventory(defines.inventory.character_armor)
-    local main_inv = task.player.get_main_inventory()
+    local real_char = player.get_character(task.player)
+    local armor_inv = real_char.get_inventory(defines.inventory.character_armor)
+    local main_inv = real_char.get_main_inventory()
     local task_dress = {}
     task_dress['action'] = 'dress_player'
     task_dress['player'] = task.player
@@ -646,8 +674,8 @@ function player.get_naked_impl(task, do_print)
                 table.insert(extra_armor, {name = stack.name, equipment = equip})
                 if task.duration == 0 then
                     -- Dump on to ground right away due to 0 duration
-                    local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
-                    local ent = task.player.surface.spill_item_stack(pos, {name = stack.name, count = 1}, false, nil)
+                    local pos = map.getRandomPositionInRealDistance(real_char.position, task.distance)
+                    local ent = real_char.surface.spill_item_stack(pos, {name = stack.name, count = 1}, false, nil)
                     map.set_equipment_for_item_on_ground(ent[1], equip)
                 end
                 main_inv.remove(stack)
@@ -662,8 +690,8 @@ function player.get_naked_impl(task, do_print)
 
         if task.duration == 0 then
             -- Dump on to ground right away due to 0 duration
-            local pos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
-            local ent = task.player.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
+            local pos = map.getRandomPositionInRealDistance(real_char.position, task.distance)
+            local ent = real_char.surface.spill_item_stack(pos, {name=armor_inv[1].name, count=1}, false, nil)
             map.set_equipment_for_item_on_ground(ent[1], equip)
         end
         armor_inv.remove(armor_inv[1])
@@ -683,7 +711,8 @@ function player.get_naked_impl(task, do_print)
 end
 
 function player.get_naked(player_, delay, distance, duration, battery_pct, shield_pct)
-    if not tc.is_player(player_) or not player_.character then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not real_char then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -735,10 +764,11 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
         return
     end
     local inv = nil
+    local real_char = player.get_character(player_)
     if as_active_armor then
-        inv = player_.get_inventory(defines.inventory.character_armor)
+        inv = real_char.get_inventory(defines.inventory.character_armor)
     else
-        inv = player_.get_main_inventory()
+        inv = real_char.get_main_inventory()
     end
     if not inv then
         return
@@ -747,8 +777,8 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     -- or detect where our item got inserted into the inventory. The player
     -- may already have an item of the type we are inserting, so there is no
     -- way to apply equipment to the correct item otherwise.
-    pos = pos or map.getRandomPositionInRange(player_.position, 10)
-    local ent = player_.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
+    pos = pos or map.getRandomPositionInRange(real_char.position, 10)
+    local ent = real_char.surface.spill_item_stack(pos, {name=armor_spec.name, count=1}, false, nil)
     if #ent > 0 then
         if armor_spec and armor_spec.equipment and #armor_spec.equipment > 0 then
             map.set_equipment_for_item_on_ground(ent[1], armor_spec.equipment, battery_pct, shield_pct)
@@ -756,10 +786,10 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
         if not leave_on_ground and (inv.can_insert(armor_spec.name) or as_active_armor) then
             if not inv.can_insert(armor_spec.name) then
                 -- Attempt to relocate current armor into main inventory
-                local inserted = player_.get_main_inventory().insert(inv[1])
+                local inserted = real_char.get_main_inventory().insert(inv[1])
                 if inserted == 0 then
                     -- No space in main inventory drop old armor
-                    local old = task.player.surface.spill_item_stack(pos, {name=inv[1].name, count=1}, false, nil)
+                    local old = real_char.surface.spill_item_stack(pos, {name=inv[1].name, count=1}, false, nil)
                     map.set_equipment_for_item_on_ground(old[1], player.get_equipment_grid_content(inv[1]))
                 end
                 inv.remove(inv[1].name)
@@ -772,14 +802,15 @@ end
 
 function player.auto_pickup_impl(task)
     local nextAfter = 10
-    if not task.player.valid or not task.player.connected or not task.player.character or not task.player.character.valid then
+    local real_char = player.get_character(task.player)
+    if not task.player.valid or not task.player.connected or not real_char or not real_char.valid then
         -- dead or disconnected
         if game.tick + nextAfter < task.end_tick then
             on_tick_n.add(game.tick + nextAfter, task)
         end
         return
     end
-    local inv = task.player.get_main_inventory()
+    local inv = real_char.get_main_inventory()
     if not inv then
         log('Player has no inventory?!?!')
         if game.tick + nextAfter < task.end_tick then
@@ -787,12 +818,13 @@ function player.auto_pickup_impl(task)
         end
         return
     end
-    local result = task.player.surface.find_entities_filtered{name = 'item-on-ground', position = task.player.position, radius = task.range}
-    for _, e in pairs(task.player.surface.find_entities_filtered{type = {'transport-belt', 'underground-belt', 'splitter'}, position = task.player.position, radius = task.range}) do
+    local surface = real_char.surface
+    local result = surface.find_entities_filtered{name = 'item-on-ground', position = real_char.position, radius = task.range}
+    for _, e in pairs(surface.find_entities_filtered{type = {'transport-belt', 'underground-belt', 'splitter'}, position = real_char.position, radius = task.range}) do
         table.insert(result, e)
     end
     for _, e in pairs(result) do
-        if map.getDistance(e.position, task.player.position) <= task.range then
+        if map.getDistance(e.position, real_char.position) <= task.range then
             if e.name == 'item-on-ground' and inv.can_insert(e.stack) then
                 local done = inv.insert(e.stack)
                 if done == e.stack.count then
@@ -817,15 +849,16 @@ function player.auto_pickup_impl(task)
 end
 
 function player.vacuum_impl(task)
-    local original_item = task.player.character_item_pickup_distance_bonus
-    local original_loot = task.player.character_loot_pickup_distance_bonus
+    local real_char = player.get_character(task.player)
+    local original_item = real_char.character_item_pickup_distance_bonus
+    local original_loot = real_char.character_loot_pickup_distance_bonus
     task['orig_item'] = original_item
     task['orig_loot'] = original_loot
 
     if math.random(1, 100) <= task.chance then
-        task.player.character_item_pickup_distance_bonus = math.max(1, task.player.character_item_pickup_distance_bonus + task.range)
-        task.player.character_loot_pickup_distance_bonus = math.max(1, task.player.character_loot_pickup_distance_bonus + task.range)
-        local range_value = math.max(task.player.character_item_pickup_distance_bonus, task.player.character_loot_pickup_distance_bonus) + 1
+        real_char.character_item_pickup_distance_bonus = math.max(1, real_char.character_item_pickup_distance_bonus + task.range)
+        real_char.character_loot_pickup_distance_bonus = math.max(1, real_char.character_loot_pickup_distance_bonus + task.range)
+        local range_value = math.max(real_char.character_item_pickup_distance_bonus, real_char.character_loot_pickup_distance_bonus) + 1
 
         if #config['msg-player-vacuum'] > 0 then
             task.player.force.print(strutil.replace_variables(config['msg-player-vacuum'], {task.player.name, range_value, task.duration}), constants.good)
@@ -846,7 +879,8 @@ function player.vacuum_impl(task)
 end
 
 function player.vacuum(player_, range, duration, chance, delay, auto_pickup)
-    if not tc.is_player(player_) or not player_.connected or not player_.character then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not player_.connected or not real_char then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -889,11 +923,12 @@ end
 function player.get_player_grid_info(task)
     local grid = nil
     if task.player.object_name == 'LuaPlayer' then
-        if not task.player.character or not task.player.character.valid then
+        local real_char = player.get_character(task.player)
+        if not real_char or not real_char.valid then
             -- player dead, try next time around
             return
         end
-        grid = task.player.character.grid
+        grid = real_char.grid
     elseif task.player.prototype == 'LuaEntity' then
         grid = task.player.grid
     end
@@ -916,11 +951,12 @@ function player.set_shields_impl(task)
     end
 
     if target.object_name == 'LuaPlayer' then
-        if not target.character or not target.character.valid then
+        local real_char = player.get_character(task.player)
+        if not real_char or not real_char.valid then
             -- player dead, try next time around
             return
         end
-        grid = target.character.grid
+        grid = real_char.grid
     elseif target.object_name == 'LuaEntity' then
         grid = target.grid
     end
@@ -965,11 +1001,12 @@ function player.set_battery_impl(task)
     end
 
     if target.object_name == 'LuaPlayer' then
-        if not target.character or not target.character.valid then
+        local real_char = player.get_character(task.player)
+        if not real_char or not real_char.valid then
             -- player dead, try next time around
             return
         end
-        grid = target.character.grid
+        grid = real_char.grid
     elseif target.object_name == 'LuaEntity' then
         grid = target.grid
     end
@@ -1003,7 +1040,8 @@ function player.set_battery_impl(task)
 end
 
 function player.discharge_common(kind, player_, percent, chance, delay, is_absolute, duration)
-    if not tc.is_player(player_) or not player_.connected or not player_.character then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not player_.connected or not real_char then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -1061,7 +1099,8 @@ function player.discharge_batteries(player_, percent, chance, delay, is_absolute
 end
 
 function player.change_body_timer(player_, added_time, chance, delay, max_count)
-    if not tc.is_player(player_) or not player_.connected or not player_.character then
+    local real_char = player.get_character(player_)
+    if not tc.is_player(player_) or not player_.connected or not real_char then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end

@@ -12,6 +12,7 @@ local proto = fml.include('utils/proto')
 local tp = fml.include('funcs/teleport')
 local tc = require('utils/type_check')
 local mapping = fml.include('utils/mapping')
+local plr = fml.include('funcs/player')
 
 function map.getDistance(pos, tgt)
     local x = (tgt.x - pos.x) ^ 2
@@ -80,7 +81,7 @@ function map.timed_teleport_random(player, distance, seconds, target_surface)
         seconds = math.random(1, 10)
     end
     if not target_surface or not tc.is_surface(target_surface) then
-        target_surface = player.surface
+        target_surface = plr.get_surface(player)
     end
     seconds = math.ceil(seconds)
 
@@ -109,7 +110,7 @@ function map.timed_teleport(player, position, seconds, target_surface)
         seconds = math.random(1, 10)
     end
     if not target_surface or not tc.is_surface(target_surface) then
-        target_surface = player.surface
+        target_surface = plr.get_surface(player)
     end
     seconds = math.ceil(seconds)
 

@@ -44,7 +44,8 @@ local function onTick(event)
                 return
             end
             if task.delay == 0 then
-                if not task.player.character or not task.player.character.valid then
+                local real_char = fn_player.get_character(task.player)
+                if not real_char or not real_char.valid then
                     -- player dead
                     on_tick_n.add(game.tick + 60, task)
                     return
@@ -90,9 +91,10 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             end
         elseif task.action == 'restore_walking_speed' then
-            if task.player and task.player.character then
+            local real_char = task.player and fn_player.get_character(task.player) or nil
+            if real_char then
                 -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
-                task.player.character_running_speed_modifier = task.original
+                real_char.character_running_speed_modifier = task.original
             end
             global.silinthlp_walk_speed[task.player.name] = nil
             if #config['msg-player-walk-speed-end'] > 0 then
@@ -134,15 +136,16 @@ local function onTick(event)
                 end
                 on_tick_n.add(game.tick + 60, task)
             else
-                if map.getDistance(task.player.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
-                    local ok = fn_player.set_on_fire(task.player, task.range, task.chance)
-                    if ok then
-                        task['lastPos'] = task.player.position
-                        task['executed'] = game.tick
+                local real_char = fn_player.get_character(task.player)
+                if real_char and real_char.valid then
+                    if map.getDistance(real_char.position, task.lastPos) > task.range / 2 or task.executed + 120 <= game.tick then
+                        local ok = fn_player.set_on_fire(task.player, task.range, task.chance)
+                        if ok then
+                            task['lastPos'] = real_char.position
+                            task['executed'] = game.tick
+                        end
                     end
-                end
-                if task.player.character then
-                    task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(task.player.character_running_speed_modifier, task.player.character_running_speed))))
+                    task['nthTick'] = math.max(1, math.floor((task.range / 2 - 2) / (1 + math.max(real_char.character_running_speed_modifier, real_char.character_running_speed))))
                 else
                     -- player dead, try again in 20 ticks and increase duration
                     task['nthTick'] = 20
@@ -173,7 +176,10 @@ local function onTick(event)
                 task.force.print(config['msg-research-arti-range-end'], constants.bad)
             end
         elseif task.action == 'spawn_explosive' then
-            map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            local real_char = fn_player.get_character(task.player)
+            if real_char and real_char.valid then
+                map.spawn_explosive(real_char.surface, real_char.position, task.item, task.itemCount, real_char, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            end
             task.count = task.count - 1
             if task.count > 0 then
                 local delay = task.delay
@@ -269,10 +275,11 @@ local function onTick(event)
                 on_tick_n.add(game.tick + 60, task)
             end
         elseif task.action == 'dress_player' then
-            local pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
+            local real_char = fn_player.get_character(task.player)
+            local pos = map.getRandomPositionInRange(real_char.position, task.distance or 20)
             fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0, task.battery_pct, task.shield_pct)
             for _, a in pairs(task.extra) do
-                pos = map.getRandomPositionInRange(task.player.position, task.distance or 20)
+                pos = map.getRandomPositionInRange(real_char.position, task.distance or 20)
                 fn_player.give_armor_impl(task.player, a, pos, false, task.distance > 0, task.battery_pct, task.shield_pct)
             end
             if task.origin == 'naked' then
@@ -346,8 +353,9 @@ local function onTick(event)
             if #config['msg-player-vacuum-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-end'], {task.player.name}), constants.bad)
             end
-            task.player.character_item_pickup_distance_bonus = math.min(0, task.player.character_item_pickup_distance_bonus - task.range)
-            task.player.character_loot_pickup_distance_bonus = math.min(0, task.player.character_loot_pickup_distance_bonus - task.range)
+            local real_char = fn_player.get_character(task.player)
+            real_char.character_item_pickup_distance_bonus = math.min(0, real_char.character_item_pickup_distance_bonus - task.range)
+            real_char.character_loot_pickup_distance_bonus = math.min(0, real_char.character_loot_pickup_distance_bonus - task.range)
         elseif task.action == 'advance_rocket' then
             if task.delay == 0 then
                 map.advance_rocket_silo_impl(task)

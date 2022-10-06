@@ -10,15 +10,17 @@ local config = fml.include('utils/config')
 local strutil = fml.include('utils/string_replace')
 local constants = fml.include('constants')
 local tc = require('utils/type_check')
+local plr = fml.include('funcs/player')
+local misc = fml.include('utils/misc')
 
 local blacklisted_vehicle_types = {'locomotive', 'artillery-wagon', 'cargo-wagon', 'fluid-wagon'}
 
 function teleport.getPlayerPrototype(player)
-    local player_prototype = player.character.prototype
-    if player.vehicle and not fml.contains(blacklisted_vehicle_types, player.vehicle.type) then
-        player_prototype = player.vehicle.prototype
+    local real_char = plr.get_character(player)
+    if real_char.vehicle and not fml.contains(blacklisted_vehicle_types, real_char.vehicle.type) then
+        return real_char.vehicle.prototype
     end
-    return player_prototype
+    return real_char.prototype
 end
 
 function teleport.getNonCollidingPosition(surface, position, player, range)
@@ -33,7 +35,8 @@ function teleport.getNonCollidingPosition(surface, position, player, range)
 end
 
 function teleport.checkTeleportLocationValid(surface, position, player)
-    if not tc.is_position(position) or not tc.is_surface(surface) or not tc.is_player(player) or not player.connected or not player.character or not player.character.valid then
+    local real_char = plr.get_character(player)
+    if not tc.is_position(position) or not tc.is_surface(surface) or not tc.is_player(player) or not player.connected or not real_char or not real_char.valid then
         return false
     end
     local chunkPos = {x = position.x / 32, y = position.y / 32}
@@ -87,13 +90,14 @@ function teleport.findRandomTeleportLocationForPlayer(task)
         game.print('Player no longer connected, aborting teleport', constants.error)
         return
     end
-    if not task.player.valid or not task.player.character or not task.player.character.valid then
+    local real_char = plr.get_character(task.player)
+    if not task.player.valid or not real_char or not real_char.valid then
         -- Player dead, try again next time
         global.silinthlp_teleport[task.player.name].finder = on_tick_n.add(game.tick + 30, task)
         return
     end
 
-    local tgtPos = map.getRandomPositionInRealDistance(task.player.position, task.distance)
+    local tgtPos = map.getRandomPositionInRealDistance(real_char.position, task.distance)
     if not teleport.checkTeleportLocationValid(task.dest_surface, tgtPos, task.player) then
         tgtPos = teleport.getNonCollidingPosition(task.dest_surface, tgtPos, task.player)
     end
@@ -109,6 +113,57 @@ function teleport.findRandomTeleportLocationForPlayer(task)
     global.silinthlp_teleport[task.player.name].finder = on_tick_n.add(game.tick + 1, task)
 end
 
+local function doTP(plr, ent, dest, surface)
+    if ent.surface ~= surface then
+        -- Cross surface, cannot be done when controller is not character
+        -- as the game complains, by simply calling the overload that accepts
+        -- a destination surface, even when the entity is the character that
+        -- is controlled by the player...
+        if plr.controller_type ~= defines.controllers.character then
+            if misc.is_se_nav_mode(plr) then
+                local view_surface = plr.surface
+                local view_pos = plr.position
+                log('ViewPos: ' .. serpent.line(view_pos) .. ' ViewSurface: ' .. view_surface.name .. ' current surface: ' .. ent.surface.name .. ' current pos: ' .. serpent.line(ent.position) .. ' dest pos: ' .. serpent.line(dest) .. ' dest surface: ' .. surface.name)
+                if remote.interfaces['space-exploration']['remote_view_stop'] then
+                    log('stopping remote view')
+                    remote.call('space-exploration', 'remote_view_stop', {player = plr})
+                end
+                log('teleporting...')
+                if plr.vehicle == ent then
+                    ent.teleport(dest, surface)
+                else
+                    plr.teleport(dest, surface)
+                end
+                if remote.interfaces['space-exploration']['remote_view_start'] then
+                    log('resuming remote view')
+                    remote.call('space-exploration', 'remote_view_start', {player = plr, zone_name = view_surface.name, position = view_pos})
+                end
+            else
+                -- Not SE, enforce controller mode to teleport and fuck the rest
+                log('Enforce controller to ' .. ent.type)
+                if ent.type == 'character' then
+                    plr.set_controller{type = defines.controllers.character, character = ent}
+                    plr.teleport(dest, surface)
+                else
+                    log('Failed to teleport. Cannot set player controller to entity type ' .. ent.type)
+                end
+            end
+        else
+            -- Player is controlling character
+            if ent == plr.character then
+                log('Player teleport')
+                plr.teleport(dest, surface)
+            elseif ent == plr.character.vehicle then
+                log('Entity teleport as player vehicle')
+                ent.teleport(dest, surface)
+            end
+        end
+    else
+        log('entity teleport')
+        ent.teleport(dest)
+    end
+end
+
 function teleport.actualTeleport(player, surface, dest)
     if not tc.is_player(player) or not tc.is_surface(surface) or not tc.is_position(dest) then
         game.print('Missing parameters: player, surface, position are required', constants.error)
@@ -122,17 +177,22 @@ function teleport.actualTeleport(player, surface, dest)
         global.silinthlp_teleport[player.name] = nil
         return
     end
-    local oldPos = player.position
-    local oldSur = player.surface
-    if player.vehicle then
-        if not fml.contains(blacklisted_vehicle_types, player.vehicle.type) then
-            player.vehicle.teleport(dest, surface)
+    local real_char = plr.get_character(player)
+    local oldPos = real_char.position
+    local oldSur = real_char.surface
+    log('From ' .. serpent.line(oldPos) .. ' on ' .. oldSur.name .. ' to ' .. serpent.line(dest) .. ' on ' .. surface.name)
+    if real_char.vehicle then
+        if not fml.contains(blacklisted_vehicle_types, real_char.vehicle.type) then
+            -- real_char.vehicle.teleport(dest, surface)
+            doTP(player, real_char.vehicle, dest, surface)
         else
-            player.vehicle.set_driver(nil)
-            player.teleport(dest, surface)
+            real_char.vehicle.set_driver(nil)
+            -- real_char.teleport(dest, surface)
+            doTP(player, real_char, dest, surface)
         end
     else
-        player.teleport(dest, surface)
+        -- real_char.teleport(dest, surface)
+        doTP(player, real_char, dest, surface)
     end
     global.silinthlp_teleport[player.name] = nil
     if #config['msg-map-teleport-player'] > 0 then
