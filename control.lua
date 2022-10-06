@@ -346,8 +346,8 @@ local function onTick(event)
             if #config['msg-player-vacuum-end'] > 0 then
                 task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-end'], {task.player.name}), constants.bad)
             end
-            task.player.character_item_pickup_distance_bonus = task.player.character_item_pickup_distance_bonus - task.range
-            task.player.character_loot_pickup_distance_bonus = task.player.character_loot_pickup_distance_bonus - task.range
+            task.player.character_item_pickup_distance_bonus = math.min(0, task.player.character_item_pickup_distance_bonus - task.range)
+            task.player.character_loot_pickup_distance_bonus = math.min(0, task.player.character_loot_pickup_distance_bonus - task.range)
         elseif task.action == 'advance_rocket' then
             if task.delay == 0 then
                 map.advance_rocket_silo_impl(task)
