@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.2
+Date: 2022-10-07
+
+  Bugfixes:
+    - Fixed an unintended side effect of 0.4.0 changes to barrage, which caused
+      it to no longer fire when the player targeted died.
+
+  Changes:
+    - Barrage command can now receive an optional position and surface to target
+      rather than targeting the player.
+    - Barrage command now has an optional parameter that allows to specify whether
+      or not to continue shooting when the player targeted is dead. For consistency
+      with previous versions this is enabled by default.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 2022-10-07
 
