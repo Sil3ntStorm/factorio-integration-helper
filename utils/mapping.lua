@@ -22,18 +22,31 @@ function mapping.supported_turret_types()
     return fml.keys(mapping.get_gun_ammo_mapping())
 end
 
+function mapping.item_name_overrides()
+    local list = {}
+    list['artillery-projectile'] = 'artillery-shell'
+    list['atomic-rocket'] = 'atomic-bomb'
+    list['se-plague-rocket'] = 'se-plague-bomb'
+    return list
+end
+
 function mapping.locale_tuple(item)
     local key = ''
-    if item == 'artillery-projectile' then
-        item = 'artillery-shell'
-    elseif item == 'atomic-rocket' then
-        item = 'atomic-bomb'
-    end
+    item = mapping.item_name_overrides()[item] or item
 
     if game.entity_prototypes[item] then
+        log(item .. ' (E) = ' .. game.entity_prototypes[item].type)
         key = 'entity-name.'
     elseif game.item_prototypes[item] then
+        log(item .. ' (I) = ' .. game.item_prototypes[item].type)
         key = 'item-name.'
+    end
+
+    if game.item_prototypes[item] then
+        local tmp = game.item_prototypes[item]
+        if tmp.type == 'ammo' or tmp.type == 'capsule' then
+            key = 'item-name.'
+        end
     end
 
     local se_size = 0
@@ -43,12 +56,15 @@ function mapping.locale_tuple(item)
     elseif string.sub(item, 1, 20) == 'se-space-pipe-long-j' then
         se_size = tonumber(string.sub(item, 22))
         item = 'se-space-pipe-long-junction'
+    elseif string.sub(item, 1, 18) == 'se-falling-meteor-' then
+        item = 'meteorite'
     end
 
     local retvar = { key .. item }
     if se_size > 0 then
         table.insert(retvar, se_size)
     end
+
     return retvar
 end
 
