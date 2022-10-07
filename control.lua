@@ -178,20 +178,32 @@ local function onTick(event)
         elseif task.action == 'spawn_explosive' then
             local real_char = fn_player.get_character(task.player)
             if real_char and real_char.valid then
-                map.spawn_explosive(real_char.surface, real_char.position, task.item, task.itemCount, real_char, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+                local pos = task.position or real_char.position
+                local sur = task.surface or real_char.surface
+                local tgt = task.position or real_char
+                if task.position then
+                    tgt = map.getRandomPositionInRange(tgt, task.range)
+                end
+                map.spawn_explosive(sur, pos, task.item, task.itemCount, tgt, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            elseif task.position and task.surface and task.continue_on_death then
+                map.spawn_explosive(task.surface, task.position, task.item, task.itemCount, nil, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            elseif task.continue_on_death then
+                -- No character, presumably the player is dead
+                -- For consistency with old (< 0.4.1) we will fire on the last known location
+                map.spawn_explosive(task.player.surface, task.player.position, task.item, task.itemCount, task.player.character, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            else
+                -- Player presumably dead, increase shots that need to be fired
+                -- which will be decreased again below, effectively making it so
+                -- that the current tick didn't do anything but waste a few CPU cycles
+                task.count = task.count + 1
             end
             task.count = task.count - 1
             if task.count > 0 then
-                local delay = task.delay
-                local tmp = strutil.split(delay, ':')
-                if tmp[1] == 'random' then
-                    tmp[2] = tmp[2] or 1
-                    tmp[3] = tmp[3] or 10
-                    delay = math.random(math.min(tmp[2], tmp[3]), math.max(tmp[2], tmp[3]))
-                end
+                local delay = strutil.get_random_from_string_or_value(task.delay, 1, 10)
                 on_tick_n.add(game.tick + delay * 60, task)
             elseif #config['msg-player-barrage-end'] > 0 then
-                task.player.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {task.player.name}), constants.good)
+                local tgt_name = task.position and strutil.get_gps_tag(task.surface, task.position) or task.player.name
+                task.player.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {tgt_name}), constants.good)
             end
         elseif task.action == 'restore_lab_speed' then
             task.force.laboratory_speed_modifier = task.force.laboratory_speed_modifier - task.added

@@ -255,7 +255,7 @@ function player.on_fire(player_, duration, range, chance, delay)
     end
 end
 
-function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing_count, randomize_target, speed_modifier, range_modifier)
+function player.barrage(player_, itemToSpawn, range, countPerVolley, count, secondsBetweenVolley, chance, delay, homing_count, randomize_target, speed_modifier, range_modifier, target_surface, target_location, continue_on_death)
     if not tc.is_player(player_) then
         game.print('player is required', constants.error)
         return
@@ -292,6 +292,17 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     if type(range_modifier) ~= 'number' then
         range_modifier = 1.0
     end
+    if type(target_location) ~= 'nil' and (not tc.is_position(target_location) or not tc.is_surface(target_surface)) then
+        game.print('If specified location must be a valid position and surface must be specified and valid surface!', constants.error)
+        return
+    end
+    if type(target_surface) ~= 'nil' and not tc.is_surface(target_surface) then
+        game.print('If specified surface must be a valid surface', constants.error)
+        return
+    end
+    if type(continue_on_death) ~= 'boolean' then
+        continue_on_death = true
+    end
 
     speed_modifier = math.max(0.1, speed_modifier)
     range_modifier = math.max(0.5, range_modifier)
@@ -299,6 +310,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
 
     if not fml.contains(proto.get_projectiles(), itemToSpawn) then
         game.print(itemToSpawn .. ' is not a valid type!', constants.error)
+        log('Valid types are: ' .. serpent.line(proto.get_projectiles()))
         return
     end
 
@@ -315,22 +327,29 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
     task['rnd_tgt'] = randomize_target
     task['speed_modifier'] = speed_modifier
     task['range_modifier'] = range_modifier
+    task['position'] = target_location
+    task['surface'] = target_surface
+    task['continue_on_death'] = continue_on_death
+
+    local real_char = player.get_character(task.player)
+    local pos = target_location or real_char.position
+    local sur = target_surface or real_char.surface
+    local tgt_name = target_location and strutil.get_gps_tag(target_surface, target_location) or player_.name
 
     if #config['msg-player-barrage-start'] > 0 then
-        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {player_.name, countPerVolley, mapping.locale_tuple(itemToSpawn), strutil.split(secondsBetweenVolley, ':')[1], count, delay}), constants.bad)
+        player_.force.print(strutil.replace_variables(config['msg-player-barrage-start'], {tgt_name, countPerVolley, mapping.locale_tuple(itemToSpawn), strutil.split(secondsBetweenVolley, ':')[1], count, delay}), constants.bad)
     end
     if delay > 0 then
         on_tick_n.add(game.tick + delay * 60, task)
     else
         if math.random(1, 100) <= chance then
-            local real_char = player.get_character(task.player)
-            map.spawn_explosive(real_char.surface, real_char.position, task.item, task.itemCount, real_char, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
+            map.spawn_explosive(sur, pos, task.item, task.itemCount, target_location or real_char, task.chance, task.range, nil, task.rnd_tgt, task.homing, task.speed_modifier, task.range_modifier)
         end
         if count > 1 then
             secondsBetweenVolley = strutil.get_random_from_string_or_value(secondsBetweenVolley, 1, 10)
             on_tick_n.add(game.tick + secondsBetweenVolley * 60, task)
         elseif #config['msg-player-barrage-end'] > 0 then
-            player_.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {player_.name}), constants.good)
+            player_.force.print(strutil.replace_variables(config['msg-player-barrage-end'], {tgt_name}), constants.good)
         end
     end
 end

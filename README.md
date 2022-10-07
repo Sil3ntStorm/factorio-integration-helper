@@ -699,6 +699,12 @@ Optionally launches multiple projectiles at once.
   Defaults to `1`. Allows to increase the range of projectiles. The range determines how long a projectile
   will be able to remain in the air, flying towards its target. If a projectile has flown for more tiles
   than its range (without hitting its target), it will simply hit the ground at its maximum distance.
+- location: Fixed position to launch a barrage at. If specified the player will be ignored (but still needs
+  to be specified). If specified surface must also be specified. Defaults to `player location`.
+- surface: Surface to use for the fixed location. If location is specified so must the surface.
+  Defaults to `player surface`.
+- continue_on_death: Boolean. Whether to keep firing at the last player location upon death, or hold fire
+  until the player respawns. Defaults to `true` which will keep firing when the player targeted is dead.
 
 #### Examples
 
@@ -711,6 +717,9 @@ Send 2 atomic warheads to the player, one of which will follow the player the ot
 at a fixed location within 40 tiles of the player location when it was created:
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'barrage', plr, 'atomic-rocket', 40, 2, 1, nil, 100, 5, 1, true)`
+
+After 5 seconds send 10 atomic warheads to the specified location (0, 0 in this case) on the specified surface:
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'barrage', plr, 'atomic-rocket', 50, 1, 10, 'random:5', 100, 5, 0, true, nil, nil, {x=0,y=0}, plr.surface)`
 
 ### dump_inv
 
