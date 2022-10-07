@@ -1,4 +1,18 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 2022-10-07
+
+  Bugfixes:
+    - Fixed an issue which caused names to not be displayed correctly
+    - Fixed an issue with vacuum command causing an unrecoverable error when player dies
+      during its lifetime.
+    - Fixed a typo in the default message for cancel_handcraft
+
+  Features:
+    - Improved compatibility with Space Exploration Navigation Satellite mode. Calls will
+      now target the actual player, instead of the current navigation satellite view.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2022-09-09
 
