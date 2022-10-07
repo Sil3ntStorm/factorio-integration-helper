@@ -120,24 +120,19 @@ local function doTP(plr, ent, dest, surface)
         -- a destination surface, even when the entity is the character that
         -- is controlled by the player...
         if plr.controller_type ~= defines.controllers.character then
-            if misc.is_se_nav_mode(plr) then
+            if misc.se_is_nav_mode(plr) then
+                -- SE Navigation Satellite mode
                 local view_surface = plr.surface
                 local view_pos = plr.position
                 log('ViewPos: ' .. serpent.line(view_pos) .. ' ViewSurface: ' .. view_surface.name .. ' current surface: ' .. ent.surface.name .. ' current pos: ' .. serpent.line(ent.position) .. ' dest pos: ' .. serpent.line(dest) .. ' dest surface: ' .. surface.name)
-                if remote.interfaces['space-exploration']['remote_view_stop'] then
-                    log('stopping remote view')
-                    remote.call('space-exploration', 'remote_view_stop', {player = plr})
-                end
+                misc.se_stop_nav_view(plr)
                 log('teleporting...')
                 if plr.vehicle == ent then
                     ent.teleport(dest, surface)
                 else
                     plr.teleport(dest, surface)
                 end
-                if remote.interfaces['space-exploration']['remote_view_start'] then
-                    log('resuming remote view')
-                    remote.call('space-exploration', 'remote_view_start', {player = plr, zone_name = view_surface.name, position = view_pos})
-                end
+                misc.se_start_nav_view(plr, view_surface, view_pos)
             else
                 -- Not SE, enforce controller mode to teleport and fuck the rest
                 log('Enforce controller to ' .. ent.type)

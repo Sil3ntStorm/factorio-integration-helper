@@ -45,6 +45,10 @@ function mapping.locale_tuple(item)
     if game.item_prototypes[item] then
         local tmp = game.item_prototypes[item]
         if tmp.type == 'ammo' or tmp.type == 'capsule' then
+            -- While they do exist in entity_prototypes these don't appear to have
+            -- text associated with them as an entity.
+            -- Of course there is no straightforward way to determine this or have
+            -- the game tell you if a string exists or not...
             key = 'item-name.'
         end
     end

@@ -1,3 +1,7 @@
+-- Copyright 2022 Sil3ntStorm https://github.com/Sil3ntStorm
+--
+-- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
+
 local tchck = {}
 -- Will still error out in Factorio when providing a Factorio type that is not of
 -- the desired type, saying that x does not have member y rather than retuning nil
