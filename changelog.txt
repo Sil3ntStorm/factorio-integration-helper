@@ -5,6 +5,7 @@ Date: 2022-10-15
   Bugfixes:
     - Fixed accessing an undefined variable in modify_walk_speed and modify_craft_speed
     - Fixed more unknown key errors in text messages
+    - Fixed an error when calling load_turrets
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2

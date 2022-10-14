@@ -3,6 +3,7 @@
 -- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
 
 local mapping = {}
+local fml = require('utils/lua_is_stupid')
 
 function mapping.get_gun_ammo_mapping()
     -- Lua can go get fucked, this is perfectly valid (or it should be)
