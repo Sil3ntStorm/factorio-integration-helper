@@ -67,7 +67,7 @@ function player.modify_walk_speed(player_, modifier, duration, chance, delay)
         game.print('player is required', constants.error)
         return
     end
-    local char = player.get_character(task.player)
+    local char = player.get_character(player_)
     if not char then
         game.print('player must have a character', constants.error)
         return
@@ -143,7 +143,7 @@ function player.modify_craft_speed(player_, modifier, duration, chance, delay)
         game.print('player is required', constants.error)
         return
     end
-    local char = player.get_character(task.player)
+    local char = player.get_character(player_)
     if not char then
         game.print('player must have a character', constants.error)
         return

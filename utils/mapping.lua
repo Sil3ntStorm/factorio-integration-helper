@@ -24,7 +24,6 @@ end
 
 function mapping.item_name_overrides()
     local list = {}
-    list['artillery-projectile'] = 'artillery-shell'
     list['atomic-rocket'] = 'atomic-bomb'
     list['se-plague-rocket'] = 'se-plague-bomb'
     return list
@@ -33,6 +32,9 @@ end
 function mapping.locale_tuple(item)
     local key = ''
     item = mapping.item_name_overrides()[item] or item
+    if string.sub(item, -11, -1) == '-projectile' then
+        item = string.sub(item, 1, -11) .. 'shell'
+    end
 
     if game.entity_prototypes[item] then
         log(item .. ' (E) = ' .. game.entity_prototypes[item].type)

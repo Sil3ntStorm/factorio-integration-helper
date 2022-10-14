@@ -1,9 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.3
+Date: 2022-10-15
+
+  Bugfixes:
+    - Fixed accessing an undefined variable in modify_walk_speed and modify_craft_speed
+    - Fixed more unknown key errors in text messages
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 2022-10-07
 
   Bugfixes:
-    - Fixed an unintended side effect of 0.4.0 changes to barrage, which caused
+    - Fixed an unintended side effect of 0.4.1 changes to barrage, which caused
       it to no longer fire when the player targeted died.
 
   Changes:
