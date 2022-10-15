@@ -122,7 +122,7 @@ You can explicitly opt to use the default value by specifying the parameter as `
 
 surface for example would usually be something like `game.players['player_name'].surface`
 position would similarly be a player position most often e.g. 
-`game.players['player_name'].surface` but it can also be a fixed position presented like
+`game.players['player_name'].position` but it can also be a fixed position presented like
 `{x=0, y=0}`.
 
 ### build_ghosts
@@ -135,7 +135,7 @@ limitations and it may not create anything, or in some cases even create the wro
 #### Parameters
 
 - **surface**: A surface of the game.
-- **force**: A force of which to repair damanged entities.
+- **force**: A force of which to repair damaged entities.
 - **position**: The center point around which to repair entities.
 - range: How many tiles around the position to build entities. Defaults to `20`.
 - chance: Percentage chance of a ghosted / destroyed entity actually being built. 
@@ -165,7 +165,7 @@ maximum health points restored are configurable.
 
 #### Parameters
   - **surface**: A surface of the game on which to repair things.
-  - **force**: A force of which to repair damanged entities.
+  - **force**: A force of which to repair damaged entities.
   - **position**: The center point around which to repair entities.
   - range: How many tiles around the position to repair entities. Defaults to `15`.
   - chance: Percentage chance of a damaged entity actually being repaired. Defaults to `75`.
@@ -192,7 +192,7 @@ you want to have build, use the share / export feature of the blueprint and copy
 string and specify that as the `blueprint_string` parameter.
 
 By default it will not build a blue belt for example if the force selected didn't yet
-research them, but that can be overriden.
+research them, but that can be overridden.
 
 #### Parameters
 - **surface**: A surface of the game on which to construct the blueprint.
@@ -242,7 +242,7 @@ Advance the currently active research by an amount
 #### Parameters
 - **force**: The game force to advance the research for
 - chance: Percentage chance to actually advance the research. Defaults to `75`.
-- percentage: By what percentag to increase the research by. Valid value range is -100 to 100.
+- percentage: By what percentage to increase the research by. Valid value range is -100 to 100.
   A value of 100 will finish the research instantly.  
   Negative values will decrease the current research progress. Defaults to a `random value between 10 and 75`.
   Default value has a 5% chance to be negative.
@@ -510,10 +510,10 @@ Revive 25% of killed biters 500 tiles around the location specified for 30 secon
 Cuts circuit wires and / or power cables between entities.
 
 #### Parameters
-- **surface**: Surface on which to disconnect
+- **surface**: Surface on which to disconnect wires.
 - **force**: Force of which to find buildings to disconnect wires from.
 - **position**: Center position around which to disconnect wires.
-- range: Numnber of tiles around the position in which to disconnect wires.
+- range: Number of tiles around the position in which to disconnect wires.
   Defaults to a `random value between 50 and 200`.
 - circuit: Boolean. Whether or not to disconnect circuit wires. Defaults to `true`.
 - power: Boolean. Whether or not to disconnect power cables. Defaults to `true`.
@@ -593,7 +593,7 @@ the location of a specified entity (either biters or players).
 - **surface**: The surface on which to rain items. __Ignored if entity is specified__
 - **position**: The position around which to center the items. __Ignored if entity is specified__
 - **entity**: The entity around which to center the spawning of items.
-  __Optional if surface and position are specified__. Takes precedence over surface and position.
+  _Optional if surface and position are specified_. Takes precedence over surface and position.
 - **item**: Internal game name of the item to spawn. Must be a valid item.
 - range: Number of tiles around the position in which to spawn the specified item.
 - count: How many of the item to spawn. Defaults to a `random value between 10 and 200`.
