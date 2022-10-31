@@ -991,11 +991,16 @@ function player.set_shields_impl(task)
         return
     end
 
+    local current = grid.shield
     local value = task.percent
     if not task.absolute then
         value = grid.shield * (1 + value / 100)
     else
         value = grid.max_shield * math.abs(value / 100)
+    end
+    if task.ramp_end > game.tick then
+        -- Currently value is the final value. Override with a ramp value closer to the current value
+        value = current - ((current - value) / (task.ramp_end - game.tick))
     end
     value = math.max(0, math.min(value, grid.max_shield))
     local remaining = value
@@ -1041,11 +1046,16 @@ function player.set_battery_impl(task)
         return
     end
 
+    local current = grid.available_in_batteries
     local value = task.percent
     if not task.absolute then
         value = grid.available_in_batteries * (1 + value / 100)
     else
         value = grid.battery_capacity * math.abs(value / 100)
+    end
+    if task.ramp_end > game.tick then
+        -- Currently value is the final value. Override with a ramp value closer to the current value
+        value = current - ((current - value) / (task.ramp_end - game.tick))
     end
     value = math.max(0, math.min(value, grid.battery_capacity))
     local remaining = value
@@ -1058,7 +1068,52 @@ function player.set_battery_impl(task)
     end
 end
 
-function player.discharge_common(kind, player_, percent, chance, delay, is_absolute, duration)
+function player.set_energy_impl(task)
+    if not task.player or not tc.is_player(task.player) or not task.player.connected or not task.player.valid then
+        return
+    end
+
+    local grid = nil
+    local target = task.player
+    if target.vehicle and target.vehicle.valid and target.vehicle.grid then
+        target = task.player.vehicle
+    end
+
+    if target.object_name == 'LuaPlayer' then
+        local real_char = player.get_character(task.player)
+        if not real_char or not real_char.valid then
+            -- player dead, try next time around
+            return
+        end
+        grid = real_char.grid
+    elseif target.object_name == 'LuaEntity' then
+        grid = target.grid
+    end
+    if not grid then
+        return
+    end
+
+    -- Equipment loop
+    for _, e in pairs(grid.equipment) do
+        if e.energy > 0 then
+            local current = e.energy
+            local value = task.percent
+            if not task.absolute then
+                value = e.energy * (1 + value / 100)
+            else
+                value = e.energy * math.abs(value / 100)
+            end
+            if task.ramp_end > game.tick then
+                -- Currently value is the final value. Override with a ramp value closer to the current value
+                value = current - ((current - value) / (task.ramp_end - game.tick))
+            end
+            value = math.max(0, math.min(value, e.max_energy))
+            e.energy = value
+        end
+    end
+end
+
+function player.discharge_common(kind, player_, percent, chance, delay, is_absolute, duration, ramp_duration)
     local real_char = player.get_character(player_)
     if not tc.is_player(player_) or not player_.connected or not real_char then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
@@ -1079,11 +1134,14 @@ function player.discharge_common(kind, player_, percent, chance, delay, is_absol
     if type(duration) ~= 'number' then
         duration = 0
     end
+    if type(ramp_duration) ~= 'number' then
+        ramp_duration = 0
+    end
     percent = math.max(-100, math.min(percent, 100))
     chance = math.max(0, math.min(chance, 100))
     delay = math.max(0, delay)
     duration = math.max(0, duration)
-    if percent == 0 then
+    if percent == 0 and not is_absolute then
         percent = math.random(-90, 90)
     end
 
@@ -1095,26 +1153,33 @@ function player.discharge_common(kind, player_, percent, chance, delay, is_absol
     task['delay'] = math.max(0, delay - 1)
     task['absolute'] = is_absolute
     task['duration'] = duration
-    task['end_tick'] = game.tick + delay * 60 + duration * 60
+    task['end_tick'] = game.tick + delay * 60 + duration * 60 + ramp_duration * 60
     task['print'] = true
+    task['ramp_end'] = game.tick + delay * 60 + ramp_duration * 60
 
     if delay == 0 then
         if kind == 'shields' then
             player.set_shields_impl(task)
-        else
+        elseif kind == 'batteries' then
             player.set_battery_impl(task)
+        else
+            player.set_energy_impl(task)
         end
     else
         on_tick_n.add(game.tick + 60, task)
     end
 end
 
-function player.discharge_shields(player_, percent, chance, delay, is_absolute, duration)
-    player.discharge_common('shields', player_, percent, chance, delay, is_absolute, duration)
+function player.discharge_shields(player_, percent, chance, delay, is_absolute, duration, ramp_duration)
+    player.discharge_common('shields', player_, percent, chance, delay, is_absolute, duration, ramp_duration)
 end
 
-function player.discharge_batteries(player_, percent, chance, delay, is_absolute, duration)
-    player.discharge_common('batteries', player_, percent, chance, delay, is_absolute, duration)
+function player.discharge_batteries(player_, percent, chance, delay, is_absolute, duration, ramp_duration)
+    player.discharge_common('batteries', player_, percent, chance, delay, is_absolute, duration, ramp_duration)
+end
+
+function player.discharge_equipment(player_, percent, chance, delay, is_absolute, duration, ramp_duration)
+    player.discharge_common('energy', player_, percent, chance, delay, is_absolute, duration, ramp_duration)
 end
 
 function player.change_body_timer(player_, added_time, chance, delay, max_count)

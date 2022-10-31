@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.4
+Date: 2022-11-01
+
+  Bugfixes:
+    - Fixed drain_battery and drain_shield not respecting a 0 value for absolutes
+
+  Features:
+    - Added drain_energy command that drains all equipment energy
+    - Added a ramp_duration parameter to drain_* commands, to adjust the value
+      over time, rather than instantly setting the desired value.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.3
 Date: 2022-10-15
 

@@ -397,15 +397,34 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
-        elseif task.action == 'set_shields' or task.action == 'set_batteries' then
+        elseif task.action == 'set_shields' or task.action == 'set_batteries' or task.action == 'set_energy' then
             if task.delay == 0 then
                 local conf_name = 'msg-player-'
                 if task.action == 'set_shields' then
                     conf_name = conf_name .. 'shields'
-                else
+                elseif task.action == 'set_batteries' then
                     conf_name = conf_name .. 'batt'
+                else
+                    conf_name = conf_name .. 'equip'
                 end
-                if task.percent < 0 then
+                local grid = nil
+                if task.player.object_name == 'LuaPlayer' then
+                    local real_char = fn_player.get_character(task.player)
+                    if real_char then
+                        grid = real_char.grid
+                    end
+                elseif task.player.object_name == 'LuaEntity' then
+                    grid = task.player.grid
+                end
+                local current_level = 0
+                if grid then
+                    if task.action == 'set_shields' then
+                        current_level = grid.shield
+                    elseif task.action == 'set_batteries' then
+                        current_level = grid.available_in_batteries
+                    end
+                end
+                if (task.absolute and task.percent <= current_level) or task.percent < current_level then
                     conf_name = conf_name .. '-dec'
                 else
                     conf_name = conf_name .. '-inc'
@@ -425,18 +444,23 @@ local function onTick(event)
                 task.print = false
                 if task.action == 'set_shields' then
                     fn_player.set_shields_impl(task)
-                else
+                elseif task.action == 'set_batteries' then
                     fn_player.set_battery_impl(task)
+                else
+                    fn_player.set_energy_impl(task)
                 end
                 if game.tick < task.end_tick then
-                    on_tick_n.add(game.tick + 30, task)
+                    -- Run function again next tick, to avoid charging by generators present / avoid having to remove them.
+                    on_tick_n.add(game.tick + 1, task)
                 else
                     -- It's all over
                     local conf_name = 'msg-player-'
                     if task.action == 'set_shields' then
                         conf_name = conf_name .. 'shields'
-                    else
+                    elseif task.action == 'set_batteries' then
                         conf_name = conf_name .. 'batt'
+                    else
+                        conf_name = conf_name .. 'equip'
                     end
                     conf_name = conf_name .. '-end'
                     if #config[conf_name] > 0 then
@@ -445,14 +469,10 @@ local function onTick(event)
                     end
                 end
             else
-                local conf_name = task.action == 'set_shields' and 'msg-player-shields-countdown' or 'msg-player-batt-countdown'
+                local conf_name = task.action == 'set_shields' and 'msg-player-shields-countdown' or (task.action == 'set_batteries' and 'msg-player-batt-countdown' or 'msg-player-equip-countdown')
                 if #config[conf_name] > 0 then
-                    local color = constants.neutral
-                    local v = strutil.split(task.percent, ':')[1]
-                    if type(task.percent) == 'number' then
-                        v = task.absolute and math.abs(task.percent) or task.percent
-                        color = v < 0 and constants.bad or constants.good
-                    end
+                    local v = task.absolute and math.abs(task.percent) or task.percent
+                    local color = v <= 0 and constants.bad or constants.good
                     local msg = strutil.replace_variables(config[conf_name], {task.player.name, v, task.delay})
                     local scale = nil
                     if #msg < 5 then
@@ -570,6 +590,7 @@ local function onLoad()
         vacuum=fn_player.vacuum,
         drain_battery=fn_player.discharge_batteries,
         drain_shield=fn_player.discharge_shields,
+        drain_energy=fn_player.discharge_equipment,
     })
 end
 

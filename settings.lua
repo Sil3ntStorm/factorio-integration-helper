@@ -733,6 +733,69 @@ data:extend({
         default_value = '__1__\'s batteries have recovered and are behaving normally again'
     },
     {
+        name = 'sil-ihlp-msg-player-equip-dec',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'goaa',
+        default_value = '__1__ encountered atmospheric disturbances which reduced their equipment energy to __2__% of capacity'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'goab',
+        default_value = '__1__ encountered a powerful force, boosting their equipment charge, now sitting at __2__%'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-dec-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'goba',
+        default_value = '__1__ encountered atmospheric disturbances reducing their equipment energy to __2__% of capacity for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-inc-dur',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gobb',
+        default_value = '__1__ encountered a powerful force, boosting their equipment charge, now sitting at __2__% for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-no-shield',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'goc',
+        default_value = '__1__ does not have equipment'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'god',
+        default_value = '__1__ will gain __2__% equipment in __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-equip-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'goe',
+        default_value = '__1__\'s equipment has recovered and is behaving normally again'
+    },
+    {
         name = 'sil-ihlp-teleport-attempts',
         type = 'int-setting',
         setting_type = 'runtime-global',

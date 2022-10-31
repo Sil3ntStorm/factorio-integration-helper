@@ -873,12 +873,19 @@ to a specified value or by a specified percentage of their current charge.
   value will be used to adjust the battery level by the percentage value.
 - duration: For how many seconds to keep the battery charge at the specified level.
   Defaults to `0` seconds.
+- ramp_duration: Number of seconds during which to gradually adjust the battery to
+  the target level. Defaults to `0` seconds.
 
 #### Examples
 
 Remove all battery charge from the player armor for 20 seconds:
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_battery', plr, 0, 100, 0, true, 20)`
+
+Over the course of 10 seconds pull the battery down to 25 percent and keep it there
+for 20 seconds:
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_battery', plr, 25, 100, 0, true, 20, 10)`
 
 ### drain_shields
 
@@ -897,9 +904,47 @@ to a specified value or by a specified percentage of their current charge.
   used to adjust the shield level by the percentage value.
 - duration: For how many seconds to keep the shield charge at the specified level.
   Defaults to `0` seconds.
+- ramp_duration: Number of seconds during which to gradually adjust the shields to
+  the target level. Defaults to `0` seconds.
 
 #### Examples
 
 Remove all shield charge from the player armor for 20 seconds:
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_shields', plr, 0, 100, 0, true, 20)`
+
+Over the course of 10 seconds pull the shields down to 25 percent and keep them there
+for 20 seconds:
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_shields', plr, 25, 100, 0, true, 20, 10)`
+
+### drain_energy
+
+Drains the energy of player equipment or their spidertron
+to a specified value or by a specified percentage of their current charge.
+
+#### Parameters
+- **player**: The player of which to drain the shields.
+- percent: percentage by which to increase / decrease the shields level.
+  Defaults to a `random value between -90 and 90`.
+- chance: Percentage change for the shields to drain.
+  Defaults to a `random value between 50 and 100`.
+- delay: Number of seconds before the shields to drain. Defaults to `0` seconds.
+- absolute: Boolean. Defaults to `false`. If set to true then the shield charge level
+  is set to the specified level in `percent`. When false the current value will be
+  used to adjust the shield level by the percentage value.
+- duration: For how many seconds to keep the shield charge at the specified level.
+  Defaults to `0` seconds.
+- ramp_duration: Number of seconds during which to gradually adjust the energy to
+  the target level. Defaults to `0` seconds.
+
+#### Examples
+
+Remove all energy charge from the player armor for 20 seconds:
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_energy', plr, 0, 100, 0, true, 20)`
+
+Over the course of 10 seconds pull the energy down to 25 percent and keep it there
+for 20 seconds:
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_energy', plr, 25, 100, 0, true, 20, 10)`
