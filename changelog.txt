@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.5
+Date: 2022-11-04
+
+  Bugfixes:
+    - Fixed unrecoverable error when player dies while affected by vacuum command.
+    - Fixed ramp_duration not working for drain_* commands without also specifying
+      a non-zero delay.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.4
 Date: 2022-11-01
 
