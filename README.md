@@ -106,9 +106,12 @@ of choice and the game. Factorio does provide RCON to interface with the game.
   - [drain_battery](#drain_battery)
     - [Parameters](#parameters-31)
     - [Examples](#examples-31)
-  - [drain_shields](#drain_shields)
+  - [drain_shield](#drain_shield)
     - [Parameters](#parameters-32)
     - [Examples](#examples-32)
+  - [drain_energy](#drain_energy)
+    - [Parameters](#parameters-33)
+    - [Examples](#examples-33)
 
 ## Available Functions
 
@@ -887,7 +890,7 @@ for 20 seconds:
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'drain_battery', plr, 25, 100, 0, true, 20, 10)`
 
-### drain_shields
+### drain_shield
 
 Drains the shields of player armor or their spidertron
 to a specified value or by a specified percentage of their current charge.
