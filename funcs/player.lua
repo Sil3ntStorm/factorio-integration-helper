@@ -1158,13 +1158,7 @@ function player.discharge_common(kind, player_, percent, chance, delay, is_absol
     task['ramp_end'] = game.tick + delay * 60 + ramp_duration * 60
 
     if delay == 0 then
-        if kind == 'shields' then
-            player.set_shields_impl(task)
-        elseif kind == 'batteries' then
-            player.set_battery_impl(task)
-        else
-            player.set_energy_impl(task)
-        end
+        on_tick_n.add(game.tick + 1, task)
     else
         on_tick_n.add(game.tick + 60, task)
     end
