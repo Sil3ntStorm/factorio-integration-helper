@@ -366,8 +366,13 @@ local function onTick(event)
                 task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-end'], {task.player.name}), constants.bad)
             end
             local real_char = fn_player.get_character(task.player)
-            real_char.character_item_pickup_distance_bonus = math.min(0, real_char.character_item_pickup_distance_bonus - task.range)
-            real_char.character_loot_pickup_distance_bonus = math.min(0, real_char.character_loot_pickup_distance_bonus - task.range)
+            if real_char then
+                real_char.character_item_pickup_distance_bonus = math.min(0, real_char.character_item_pickup_distance_bonus - task.range)
+                real_char.character_loot_pickup_distance_bonus = math.min(0, real_char.character_loot_pickup_distance_bonus - task.range)
+            else
+                -- No character, try again at a later point
+                on_tick_n.add(game.tick + 60, task)
+            end
         elseif task.action == 'advance_rocket' then
             if task.delay == 0 then
                 map.advance_rocket_silo_impl(task)
