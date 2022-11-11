@@ -75,12 +75,13 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
-        elseif task.action == 'set_walking_speed' then
+        elseif task.action == 'set_character_value' then
             if task.delay == 0 then
-                fn_player.modify_walk_speed_impl(task)
+                fn_player.modify_character_value_common_impl(task)
             else
-                if #config['msg-player-walk-speed-countdown'] > 0 then
-                    local msg = strutil.replace_variables(config['msg-player-walk-speed-countdown'], {task.player.name, task.delay, task.duration, task.modifier})
+                local conf_name = 'msg-player-' .. task.kind .. '-countdown'
+                if #config[conf_name] > 0 then
+                    local msg = strutil.replace_variables(config[conf_name], {task.player.name, task.delay, task.duration, task.modifier})
                     local scale = nil
                     if #msg < 5 then
                         scale = 1.7
@@ -90,39 +91,25 @@ local function onTick(event)
                 task.delay = task.delay - 1
                 on_tick_n.add(game.tick + 60, task)
             end
-        elseif task.action == 'restore_walking_speed' then
+        elseif task.action == 'restore_character_value' then
             local real_char = task.player and fn_player.get_character(task.player) or nil
             if real_char then
                 -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
-                real_char.character_running_speed_modifier = task.original
-            end
-            global.silinthlp_walk_speed[task.player.name] = nil
-            if #config['msg-player-walk-speed-end'] > 0 then
-                task.player.force.print(strutil.replace_variables(config['msg-player-walk-speed-end'], {task.player.name}), constants.neutral)
-            end
-        elseif task.action == 'set_crafting_speed' then
-            if task.delay == 0 then
-                fn_player.modify_craft_speed_impl(task)
-            else
-                if #config['msg-player-craft-speed-countdown'] > 0 then
-                    local msg = strutil.replace_variables(config['msg-player-craft-speed-countdown'], {task.player.name, task.delay, task.duration, task.modifier})
-                    local scale = nil
-                    if #msg < 5 then
-                        scale = 1.7
-                    end
-                    showTextOnPlayer(msg, task.player, nil, scale)
+                if task.kind == 'walk-speed' then
+                    real_char.character_running_speed_modifier = task.original
+                elseif task.kind == 'craft-speed' then
+                    real_char.character_crafting_speed_modifier = task.original
+                elseif task.kind == 'reach-distance' then
+                    real_char.character_reach_distance_bonus = task.original
+                elseif task.kind == 'build-distance' then
+                    real_char.character_build_distance_bonus = task.original
                 end
-                task.delay = task.delay - 1
-                on_tick_n.add(game.tick + 60, task)
             end
-        elseif task.action == 'restore_crafting_speed' then
-            if task.player and task.player.character then
-                -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
-                task.player.character_crafting_speed_modifier = task.original
-            end
-            global.silinthlp_craft_speed[task.player.name] = nil
-            if #config['msg-player-craft-speed-end'] > 0 then
-                task.player.force.print(strutil.replace_variables(config['msg-player-craft-speed-end'], {task.player.name}), constants.neutral)
+            local key = 'silinthlp_' .. task.kind
+            global[key][task.player.name] = nil
+            local conf_name = 'msg-player-' .. task.kind .. '-end'
+            if #config[conf_name] > 0 then
+                task.player.force.print(strutil.replace_variables(config[conf_name], {task.player.name}), constants.neutral)
             end
         elseif task.action == 'player_on_fire' then
             if game.tick < task.firstTick then
@@ -586,6 +573,8 @@ local function onLoad()
         rain_item=map.rain_item,
         modify_walk_speed=fn_player.modify_walk_speed,
         modify_craft_speed=fn_player.modify_craft_speed,
+        modify_reach_distance=fn_player.modify_reach_distance,
+        modify_build_distance=fn_player.modify_build_distance,
         on_fire=fn_player.on_fire,
         barrage=fn_player.barrage,
         dump_inv=fn_player.dump_inventory,

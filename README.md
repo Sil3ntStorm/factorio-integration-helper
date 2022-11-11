@@ -82,36 +82,42 @@ of choice and the game. Factorio does provide RCON to interface with the game.
   - [modify_craft_speed](#modify_craft_speed)
     - [Parameters](#parameters-23)
     - [Examples](#examples-23)
-  - [on_fire](#on_fire)
+  - [modify_reach_distance](#modify_reach_distance)
     - [Parameters](#parameters-24)
     - [Examples](#examples-24)
-  - [barrage](#barrage)
+  - [modify_build_distance](#modify_build_distance)
     - [Parameters](#parameters-25)
     - [Examples](#examples-25)
-  - [dump_inv](#dump_inv)
+  - [on_fire](#on_fire)
     - [Parameters](#parameters-26)
     - [Examples](#examples-26)
-  - [cancel_hand_craft](#cancel_hand_craft)
+  - [barrage](#barrage)
     - [Parameters](#parameters-27)
     - [Examples](#examples-27)
-  - [start_hand_craft](#start_hand_craft)
+  - [dump_inv](#dump_inv)
     - [Parameters](#parameters-28)
     - [Examples](#examples-28)
-  - [get_naked](#get_naked)
+  - [cancel_hand_craft](#cancel_hand_craft)
     - [Parameters](#parameters-29)
     - [Examples](#examples-29)
-  - [vacuum](#vacuum)
+  - [start_hand_craft](#start_hand_craft)
     - [Parameters](#parameters-30)
     - [Examples](#examples-30)
-  - [drain_battery](#drain_battery)
+  - [get_naked](#get_naked)
     - [Parameters](#parameters-31)
     - [Examples](#examples-31)
-  - [drain_shield](#drain_shield)
+  - [vacuum](#vacuum)
     - [Parameters](#parameters-32)
     - [Examples](#examples-32)
-  - [drain_energy](#drain_energy)
+  - [drain_battery](#drain_battery)
     - [Parameters](#parameters-33)
     - [Examples](#examples-33)
+  - [drain_shield](#drain_shield)
+    - [Parameters](#parameters-34)
+    - [Examples](#examples-34)
+  - [drain_energy](#drain_energy)
+    - [Parameters](#parameters-35)
+    - [Examples](#examples-35)
 
 ## Available Functions
 
@@ -647,6 +653,42 @@ Increases or decreases the hand crafting speed of a player.
 After 5 seconds make a player craft at half speed for 10 seconds:
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'modify_craft_speed', plr, 50, 10, 100, 5)`
+
+### modify_reach_distance
+
+Increase the distance the character can interact with entities.
+
+#### Parameters
+- **player**: The player of which to modify the reach distance.
+- tiles: Number of tiles to increase the reach distance by. Defaults to `20`. Must be > 0.
+- duration: Number of seconds after which the reach distance is returned to the previous value.
+  Defaults to a `random value between 10 and 60 seconds`.
+- chance: percentage chance for the player reach distance to be modified. Defaults to `100`.
+- delay: Number of seconds before the reach distance is changed. Defaults to `0` seconds.
+
+#### Examples
+
+After 2 seconds make the player be able to interact 5 tiles more than usual for 10 seconds.
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'modify_reach_distance', plr, 5, 10, 100, 2)`
+
+### modify_build_distance
+
+Increase the distance the character can build new entities in.
+
+#### Parameters
+- **player**: The player of which to modify the build distance.
+- tiles: Number of tiles to increase the build distance by. Defaults to `20`. Must be > 0.
+- duration: Number of seconds after which the build distance is returned to the previous value.
+  Defaults to a `random value between 10 and 60 seconds`.
+- chance: percentage chance for the player build distance to be modified. Defaults to `100`.
+- delay: Number of seconds before the build distance is changed. Defaults to `0` seconds.
+
+#### Examples
+
+After 2 seconds make the player be able to build stuff 5 tiles further away than usual for 10 seconds.
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'modify_build_distance', plr, 5, 10, 100, 2)`
 
 ### on_fire
 

@@ -427,6 +427,60 @@ data:extend({
         default_value = '__1__ crafting speed has returned to normal'
     },
     {
+        name = 'sil-ihlp-msg-player-build-distance-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gada',
+        default_value = '__1__ can now build things __2__ tiles further away for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-build-distance-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gadc',
+        default_value = '__2__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-build-distance-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gadd',
+        default_value = '__1__ building skills have returned to normal'
+    },
+    {
+        name = 'sil-ihlp-msg-player-reach-distance-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gaea',
+        default_value = '__1__ can now reach __2__ tiles further for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-reach-distance-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gaec',
+        default_value = '__2__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-reach-distance-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gaed',
+        default_value = '__1__ strength has returned to normal'
+    },
+    {
         name = 'sil-ihlp-msg-player-on-fire',
         type = 'string-setting',
         setting_type = 'runtime-global',
