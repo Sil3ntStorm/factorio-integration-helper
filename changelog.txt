@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.7
+Date: 2022-11-28
+
+  Bugfixes:
+    - Fix teleport being delayed until a location could be found when the spawn location
+      was modified to not be at 0,0 and there was no valid location around 0,0.
+    - Allow remove_entity to leave the contents of removed entities rather than removing it.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.6
 Date: 2022-11-11
 

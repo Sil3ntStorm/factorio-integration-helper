@@ -106,9 +106,22 @@ function teleport.findRandomTeleportLocationForPlayer(task)
         teleport.setTeleportDestinationForPlayer(task.dest_surface, tgtPos, task.player)
     elseif global.silinthlp_teleport[task.player.name].attempts > config['teleport-attempts'] then
         -- Too many attempts, send player to spawn
-        tgtPos = teleport.getNonCollidingPosition(task.dest_surface, {x = 0, y = 0}, task.player)
+        local spawnLoc = task.player.force.get_spawn_position(task.dest_surface)
+        -- Use attempts to increase the range in which a safe position is found, in an attempt to get a successful teleport
+        local range = math.max(10, global.silinthlp_teleport[task.player.name].attempts * 2)
+        tgtPos = teleport.getNonCollidingPosition(task.dest_surface, spawnLoc or {x = 0, y = 0}, task.player, range)
+        if global.silinthlp_teleport[task.player.name].attempts >= config['teleport-attempts'] * 2 and not teleport.checkTeleportLocationValid(task.dest_surface, tgtPos, task.player) then
+            -- Twice the attempts, still no location. Give up
+            if #config['msg-map-teleport-fail'] > 0 then
+                task.player.force.print(strutil.replace_variables(config['msg-map-teleport-fail'], {task.player.name, task.dest_surface.name}), constants.neutral)
+            end
+            global.silinthlp_teleport[player.name] = nil
+            log('teleport failed to due location invalid: ' .. serpent.line(tgtPos) .. ' on ' .. task.dest_surface.name .. ' for ' .. task.player.name .. ' a ' .. teleport.getPlayerPrototype(task.player))
+            return
+        end
         teleport.setTeleportDestinationForPlayer(task.dest_surface, tgtPos, task.player)
     end
+    log('FindLocation for ' .. task.player.name .. ' had ' .. global.silinthlp_teleport[task.player.name].attempts .. ' attempts out of ' .. config['teleport-attempts'])
     -- Try again next time
     global.silinthlp_teleport[task.player.name].finder = on_tick_n.add(game.tick + 1, task)
 end
