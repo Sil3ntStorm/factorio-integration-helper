@@ -1,4 +1,4 @@
-﻿-- Copyright 2022 Sil3ntStorm https://github.com/Sil3ntStorm
+-- Copyright 2022 Sil3ntStorm https://github.com/Sil3ntStorm
 --
 -- Licensed under MS-RL, see https://opensource.org/licenses/MS-RL
 
@@ -371,7 +371,7 @@ function map.enemy_artillery(surface, force, position, range, max, chance, enemy
     end
 end
 
-function map.remove_entities(surface, force, position, range, name, max, chance)
+function map.remove_entities(surface, force, position, range, name, max, chance, leave_content)
     if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('surface and force are required', constants.error)
         return
@@ -387,6 +387,9 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
     end
     if type(chance) ~= 'number' then
         chance = math.random(25, 80)
+    end
+    if type(leave_content) ~= 'boolean' then
+        leave_content = false
     end
 
     local function rndItem()
@@ -411,8 +414,19 @@ function map.remove_entities(surface, force, position, range, name, max, chance)
     local cnt = 0
     for _, e in pairs(found) do
         if math.random(1, 100) <= chance then
-            if e.destroy({raise_destroy=true}) then
-                cnt = cnt + 1
+            local pos = e.position
+            if leave_content then
+                if e.die() then
+                    local ghst = surface.find_entities_filtered{ghost_name=name, position=pos, radius=1}
+                    for _, gh in pairs(ghst) do
+                        gh.destroy()
+                    end
+                    cnt = cnt + 1
+                end
+            else
+                if e.destroy({raise_destroy=True}) then
+                    cnt = cnt + 1
+                end
             end
         end
         if cnt >= max then

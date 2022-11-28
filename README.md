@@ -457,6 +457,8 @@ to the specified number of this entity. It will **NOT** remove multiple differen
   Won't remove more than this many buildings.
 - chance: Percentage chance for any selected building to actually remove.
   Defaults to a `random value between 25 and 80`.
+- leave_content: Whether to leave the content in place (true) or remove it (false).
+  Defaults to `false`.
 
 #### Examples
 
