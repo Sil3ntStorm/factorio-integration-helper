@@ -422,6 +422,8 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
                         gh.destroy()
                     end
                     cnt = cnt + 1
+                elseif e.destroy({raise_destroy=True}) then
+                    cnt = cnt + 1
                 end
             else
                 if e.destroy({raise_destroy=True}) then
