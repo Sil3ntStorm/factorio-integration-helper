@@ -459,6 +459,11 @@ to the specified number of this entity. It will **NOT** remove multiple differen
   Defaults to a `random value between 25 and 80`.
 - leave_content: Whether to leave the content in place (true) or remove it (false).
   Defaults to `false`.
+- item_class: A class of entity to remove (e.g. `assembling-machine`) in order to remove any
+  kind of assembling machine, rather than just tier 1 assemblers when specifying name as
+  `assembling-machine-1`. **Overrides name** when specified.
+- all_players: Whether to remove entities around all players on the specified force, rather
+  than around the specified position. Defaults to `false`. **Overrides position** when true.
 
 #### Examples
 

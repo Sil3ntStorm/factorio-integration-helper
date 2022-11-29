@@ -371,7 +371,7 @@ function map.enemy_artillery(surface, force, position, range, max, chance, enemy
     end
 end
 
-function map.remove_entities(surface, force, position, range, name, max, chance, leave_content)
+function map.remove_entities(surface, force, position, range, name, max, chance, leave_content, item_class, center_around_all_players)
     if not tc.is_surface(surface) or not tc.is_force(force) then
         game.print('surface and force are required', constants.error)
         return
@@ -391,6 +391,9 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
     if type(leave_content) ~= 'boolean' then
         leave_content = false
     end
+    if type(center_around_all_players) ~= 'boolean' then
+        center_around_all_players = false
+    end
 
     local function rndItem()
         local names = proto.get_entity_prototypes()
@@ -402,32 +405,72 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
         name = rndItem()
         allowRandom = true
     end
+    local useClass = false
+    if type(item_class) == 'string' then
+        if fml.contains(proto.get_available_entity_types(), item_class) then
+            useClass = true
+        else
+            log('Invalid class ' .. item_class .. ' specified. Available: ' .. serpent.line(proto.get_available_entity_types()))
+        end
+    end
+
+    local function doSearch(surface, force, range, position, use_class, item_class, item_name)
+        local result = {}
+        if use_class then
+            result = surface.find_entities_filtered{type=item_class, force=force, radius=range, position=position}
+        else
+            result = surface.find_entities_filtered{name=item_name, force=force, radius=range, position=position}
+        end
+        return result
+    end
+
+    local function searchLoop(surface, force, range, position, use_class, item_class, name, center_around_all_players)
+        local found = {}
+        if not center_around_all_players then
+            found = doSearch(surface, force, range, position, use_class, item_class, name)
+        else
+            for _, lplr in pairs(force.connected_players) do
+                local tmp = doSearch(surface, force, range, lplr.position, use_class, item_class, name)
+                for _, ent in pairs(tmp) do
+                    table.insert(found, ent)
+                end
+            end
+        end
+        return found
+    end
 
     chance = math.max(0, math.min(chance, 100))
-    local found = surface.find_entities_filtered{name=name, force=force, radius=range, position=position}
+    local found = searchLoop(surface, force, range, position, useClass, item_class, name, center_around_all_players)
     local lp = 1
     while allowRandom and #found == 0 and lp < 50 do
         name = rndItem()
-        found = surface.find_entities_filtered{name=name, force=force, radius=range, position=position}
+        found = searchLoop(surface, force, range, position, useClass, item_class, name, center_around_all_players)
         lp = lp + 1
     end
+
+    local whitelisted_content_entity_types = {'transport-belt', 'underground-belt', 'splitter', 'linked-belt', 'loader', 'loader1x1'}
     local cnt = 0
     for _, e in pairs(found) do
         if math.random(1, 100) <= chance then
             local pos = e.position
-            if leave_content then
+            local e_name = e.name
+            if leave_content and fml.contains(whitelisted_content_entity_types, e.type) then
                 if e.die() then
-                    local ghst = surface.find_entities_filtered{ghost_name=name, position=pos, radius=1}
+                    local ghst = surface.find_entities_filtered{ghost_name=e_name, position=pos, radius=1}
                     for _, gh in pairs(ghst) do
                         gh.destroy()
                     end
                     cnt = cnt + 1
                 elseif e.destroy({raise_destroy=True}) then
                     cnt = cnt + 1
+                else
+                    log('Failed to die/destroy entity ' .. e.name .. ' a ' .. e.type .. ' at ' .. serpent.line(e.position))
                 end
             else
                 if e.destroy({raise_destroy=True}) then
                     cnt = cnt + 1
+                else
+                    log('Failed to destroy entity ' .. e.name .. ' a ' .. e.type .. ' at ' .. serpent.line(e.position))
                 end
             end
         end
@@ -435,10 +478,18 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
             break
         end
     end
+    local msg_name = name
+    if useClass then
+        if fml.contains(whitelisted_content_entity_types, item_class) and item_class ~= 'loader1x1' then
+            msg_name = item_class
+        else
+            msg_name = proto.name_for_entity_type(item_class)
+        end
+    end
     if #found == 0 and #config['msg-map-remove-entity-nothing'] > 0 then
-        force.print(strutil.replace_variables(config['msg-map-remove-entity-nothing'], {{'entity-name.' .. name}}), constants.neutral)
+        force.print(strutil.replace_variables(config['msg-map-remove-entity-nothing'], {{'entity-name.' .. msg_name}}), constants.neutral)
     elseif #config['msg-map-remove-entity'] > 0 then
-        force.print(strutil.replace_variables(config['msg-map-remove-entity'], {cnt, {'entity-name.' .. name}}), cnt > 0 and constants.bad or constants.neutral)
+        force.print(strutil.replace_variables(config['msg-map-remove-entity'], {cnt, {'entity-name.' .. msg_name}}), cnt > 0 and constants.bad or constants.neutral)
     end
 end
 

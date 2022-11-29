@@ -53,4 +53,24 @@ function proto.get_supported_ammo_types()
     return result
 end
 
+function proto.get_available_entity_types()
+    local result = {}
+    for _, v in pairs(proto.get_entity_prototypes()) do
+        if not fml.contains(result, game.entity_prototypes[v].type) then
+            table.insert(result, game.entity_prototypes[v].type)
+        end
+    end
+    return result
+end
+
+function proto.name_for_entity_type(e_type)
+    for _, v in pairs(proto.get_entity_prototypes()) do
+        local e = game.entity_prototypes[v]
+        if e.type == e_type then
+            return e.name
+        end
+    end
+    return nil
+end
+
 return proto

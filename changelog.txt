@@ -1,10 +1,23 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.8
+Date: 2022-11-29
+
+  Features:
+    - Added item_class and all_players parameters to remove_entity command. Allows centering
+      entity removal around all players. item_class overrides the item name if specified and
+      can be used to find any entity of a specific type rather than a specific entity type.
+      Use item_class 'assembling-machine' rather than 'assembling-machine-1' as name to remove
+      any assembling machine, rather than just Tier 1 Assemblers.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.7
 Date: 2022-11-28
 
   Bugfixes:
     - Fix teleport being delayed until a location could be found when the spawn location
       was modified to not be at 0,0 and there was no valid location around 0,0.
+
+  Features:
     - Allow remove_entity to leave the contents of removed entities rather than removing it.
 
 ---------------------------------------------------------------------------------------------------
