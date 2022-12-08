@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.9
+Date: 2022-12-08
+
+  Bugfixes:
+    - Fixed unrecoverable error when player is dead when armor removal times out and attempts
+      to return the armor to the player.
+    - Added a few more safety checks related to player death.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.8
 Date: 2022-11-29
 

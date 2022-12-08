@@ -93,7 +93,7 @@ local function onTick(event)
             end
         elseif task.action == 'restore_character_value' then
             local real_char = task.player and fn_player.get_character(task.player) or nil
-            if real_char then
+            if real_char and real_char.valid then
                 -- We can forego resetting the character speed when dead, as a new character won't have the buff in the first place
                 if task.kind == 'walk-speed' then
                     real_char.character_running_speed_modifier = task.original
@@ -275,6 +275,11 @@ local function onTick(event)
             end
         elseif task.action == 'dress_player' then
             local real_char = fn_player.get_character(task.player)
+            if not real_char or not real_char.valid then
+                log('Attempted to dress_player ' .. ((task.player and task.player.valid) and task.player.name or '') .. ' without character, retrying in 2 seconds')
+                on_tick_n.add(game.tick + 120, task)
+                return
+            end
             local pos = map.getRandomPositionInRange(real_char.position, task.distance or 20)
             fn_player.give_armor_impl(task.player, task.worn, pos, true, task.distance > 0, task.battery_pct, task.shield_pct)
             for _, a in pairs(task.extra) do
@@ -353,7 +358,7 @@ local function onTick(event)
                 task.player.force.print(strutil.replace_variables(config['msg-player-vacuum-end'], {task.player.name}), constants.bad)
             end
             local real_char = fn_player.get_character(task.player)
-            if real_char then
+            if real_char and real_char.valid then
                 real_char.character_item_pickup_distance_bonus = math.min(0, real_char.character_item_pickup_distance_bonus - task.range)
                 real_char.character_loot_pickup_distance_bonus = math.min(0, real_char.character_loot_pickup_distance_bonus - task.range)
             else
@@ -402,7 +407,7 @@ local function onTick(event)
                 local grid = nil
                 if task.player.object_name == 'LuaPlayer' then
                     local real_char = fn_player.get_character(task.player)
-                    if real_char then
+                    if real_char and real_char.valid then
                         grid = real_char.grid
                     end
                 elseif task.player.object_name == 'LuaEntity' then

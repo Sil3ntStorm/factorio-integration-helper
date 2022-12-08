@@ -102,7 +102,7 @@ function player.modify_character_value_common_impl(task)
         return
     end
     local char = player.get_character(task.player)
-    if not char then
+    if not char or not char.valid then
         -- currently dead? Try again later
         on_tick_n.add(game.tick + 60, task)
         return
@@ -225,7 +225,7 @@ function player.on_fire(player_, duration, range, chance, delay)
     task['executed'] = 0
     local speed = 1
     local char = player.get_character(task.player)
-    if char then
+    if char and char.valid then
         speed = math.max(char.character_running_speed_modifier, char.character_running_speed)
     end
     task['nthTick'] = math.max(1, math.floor((range / 2 - 2) / (1 + speed)))
@@ -663,6 +663,11 @@ function player.get_naked_impl(task, do_print)
         return
     end
     local real_char = player.get_character(task.player)
+    if not real_char or not real_char.valid then
+        log('get_naked called for player without character, retrying in 2 seconds')
+        on_tick_n.add(game.tick + 120, task)
+        return
+    end
     local armor_inv = real_char.get_inventory(defines.inventory.character_armor)
     local main_inv = real_char.get_main_inventory()
     local task_dress = {}
@@ -772,6 +777,11 @@ function player.give_armor_impl(player_, armor_spec, pos, as_active_armor, leave
     end
     local inv = nil
     local real_char = player.get_character(player_)
+    if not real_char or not real_char.valid then
+        log('give_armor_impl called for player without character, retrying in 2 seconds')
+        on_tick_n.add(game.tick + 120, task)
+        return
+    end
     if as_active_armor then
         inv = real_char.get_inventory(defines.inventory.character_armor)
     else
@@ -857,6 +867,11 @@ end
 
 function player.vacuum_impl(task)
     local real_char = player.get_character(task.player)
+    if not real_char or not real_char.valid then
+        log('vacuum called for player without character, retrying in 2 seconds')
+        on_tick_n.add(game.tick + 120, task)
+        return
+    end
     local original_item = real_char.character_item_pickup_distance_bonus
     local original_loot = real_char.character_loot_pickup_distance_bonus
     task['orig_item'] = original_item
@@ -887,7 +902,7 @@ end
 
 function player.vacuum(player_, range, duration, chance, delay, auto_pickup)
     local real_char = player.get_character(player_)
-    if not tc.is_player(player_) or not player_.connected or not real_char then
+    if not tc.is_player(player_) or not player_.connected or not real_char or not real_char.valid then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -1103,7 +1118,7 @@ end
 
 function player.discharge_common(kind, player_, percent, chance, delay, is_absolute, duration, ramp_duration)
     local real_char = player.get_character(player_)
-    if not tc.is_player(player_) or not player_.connected or not real_char then
+    if not tc.is_player(player_) or not player_.connected or not real_char or not real_char.valid then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
@@ -1166,7 +1181,7 @@ end
 
 function player.change_body_timer(player_, added_time, chance, delay, max_count)
     local real_char = player.get_character(player_)
-    if not tc.is_player(player_) or not player_.connected or not real_char then
+    if not tc.is_player(player_) or not player_.connected or not real_char or not real_char.valid then
         game.print('Missing parameters: player is required and player must be alive', constants.error)
         return
     end
