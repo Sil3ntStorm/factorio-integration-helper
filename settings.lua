@@ -481,6 +481,42 @@ data:extend({
         default_value = '__1__ strength has returned to normal'
     },
     {
+        name = 'sil-ihlp-msg-player-mining-speed-inc',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gafa',
+        default_value = '__1__ got some shiny new tools, they are mining __2__% faster for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-mining-speed-dec',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gafb',
+        default_value = '__1__ tools have gotten dull, they are mining __2__% slower for __3__ seconds'
+    },
+    {
+        name = 'sil-ihlp-msg-player-mining-speed-countdown',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gafc',
+        default_value = '__2__'
+    },
+    {
+        name = 'sil-ihlp-msg-player-mining-speed-end',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'gafd',
+        default_value = '__1__ mining speed has returned to normal'
+    },
+    {
         name = 'sil-ihlp-msg-player-on-fire',
         type = 'string-setting',
         setting_type = 'runtime-global',
@@ -875,6 +911,15 @@ data:extend({
         minimum_value = 100,
         maximum_value = 1500,
         order = '8l'
+    },
+    {
+        name = 'sil-ihlp-max-mining-speed-modifier',
+        type = 'int-setting',
+        setting_type = 'runtime-global',
+        default_value = 400,
+        minimum_value = 100,
+        maximum_value = 2000,
+        order = '8m'
     },
     {
         name = 'sil-ihlp-explosive-spawn-range',

@@ -142,6 +142,9 @@ function player.modify_character_value_common_impl(task)
         color = constants.good
         conf_message_name = 'msg-player-' .. task.kind .. '-inc'
         msg_value = task.modifier
+    elseif task.kind == 'mining-speed' then
+        original = char.character_mining_speed_modifier
+        char.character_mining_speed_modifier = math.max(-0.97, (original * 100 + task.modifier) / 100 - 1)
     end
 
     -- Schedule restore task
@@ -170,6 +173,10 @@ end
 
 function player.modify_build_distance(player_, modifier, duration, chance, delay)
     player.modify_character_value_common('build-distance', player_, modifier or 20, duration, chance, delay)
+end
+
+function player.modify_mining_speed(player_, modifier, duration, chance, delay)
+    player.modify_character_value_common('mining-speed', player_, math.min(modifier or 100, config['max-mining-speed-modifier']), duration, chance, delay)
 end
 
 function player.set_on_fire(player_, range, chance)

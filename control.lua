@@ -103,6 +103,8 @@ local function onTick(event)
                     real_char.character_reach_distance_bonus = task.original
                 elseif task.kind == 'build-distance' then
                     real_char.character_build_distance_bonus = task.original
+                elseif task.kind == 'mining-speed' then
+                    real_char.character_mining_speed_modifier = task.original
                 end
             end
             local key = 'silinthlp_' .. task.kind
@@ -580,6 +582,7 @@ local function onLoad()
         modify_craft_speed=fn_player.modify_craft_speed,
         modify_reach_distance=fn_player.modify_reach_distance,
         modify_build_distance=fn_player.modify_build_distance,
+        modify_mining_speed=fn_player.modify_mining_speed,
         on_fire=fn_player.on_fire,
         barrage=fn_player.barrage,
         dump_inv=fn_player.dump_inventory,
