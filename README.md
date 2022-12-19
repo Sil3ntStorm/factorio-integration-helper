@@ -190,11 +190,11 @@ maximum health points restored are configurable.
 
 Uses the default values for all non-optional parameters. Repairs between 20 and 150 health
 for 75% of entities within 15 tiles of the player.
-`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'repair_base', 
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'repair_base',
 plr.surface, plr.force, plr.position)`
 
 Repairs exactly 100 health for 75% of entities within 10 tiles of the player.
-`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'repair_base', 
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'repair_base',
 plr.surface, plr.force, plr.position, 10, nil, 100, 100)`
 
 ### build_bp
@@ -635,7 +635,7 @@ Increases or decreases the walking speed of a player.
   Valid range is between 1 and the mod setting for maximum speed.
 - duration: Number of seconds for which to adjust the player speed. Afterwards the original value
   will be restored. Defaults to a `random value between 10 and 60`.
-- chance: percentage chance to actually change the walking speed of the player. Defaults to `100`. 
+- chance: percentage chance to actually change the walking speed of the player. Defaults to `100`.
 - delay: Number of seconds after which to actually change the walking speed of the player.
   Defaults to `0 seconds`.
 
@@ -702,7 +702,7 @@ After 2 seconds make the player be able to build stuff 5 tiles further away than
 
 ### modify_mining_speed
 
-Increase the speed the character can mine entities at.
+Increase or decrease the speed the character can mine entities at.
 
 #### Parameters
 - **player**: The player of which to modify the mining speed.
@@ -726,7 +726,7 @@ Creates fire centered around a player.
 - **player**: The player on which to center the fire.
 - duration: Duration in seconds for how long to keep creating fire around the player.
   Defaults to a `random value between 10 and 60` seconds.
-- range: Number of tiles to set on fire centered on the player. Defaults to a 
+- range: Number of tiles to set on fire centered on the player. Defaults to a
   `random value between 10 and 40` tiles. Valid range is 4 to 80.
 - chance: Chance for fire to be created for each tile. Defaults to `80`.
 - delay: Number of seconds after which to start creating the fire. Defaults to `0` seconds.
@@ -853,7 +853,7 @@ Stop hand crafting for the player, but allow them to queue new stuff:
 ### start_hand_craft
 
 Starts hand crafting a specific item by a player.  
-By default a random item that the player can currently craft. 
+By default a random item that the player can currently craft.
 The player needs the ingredients in their inventory and the item
 needs to be able to be handcrafted. The technology must also be researched.
 
