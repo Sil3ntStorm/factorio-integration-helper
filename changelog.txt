@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.11
+Date: 2022-12-24
+
+  Bugfixes:
+    - Fixed unrecoverable error when player died in between vacuum starting and ending but was
+      already alive when it ended.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.10
 Date: 2022-12-18
 

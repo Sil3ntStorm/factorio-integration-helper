@@ -361,8 +361,8 @@ local function onTick(event)
             end
             local real_char = fn_player.get_character(task.player)
             if real_char and real_char.valid then
-                real_char.character_item_pickup_distance_bonus = math.min(0, real_char.character_item_pickup_distance_bonus - task.range)
-                real_char.character_loot_pickup_distance_bonus = math.min(0, real_char.character_loot_pickup_distance_bonus - task.range)
+                real_char.character_item_pickup_distance_bonus = math.max(0, real_char.character_item_pickup_distance_bonus - task.range)
+                real_char.character_loot_pickup_distance_bonus = math.max(0, real_char.character_loot_pickup_distance_bonus - task.range)
             else
                 -- No character, try again at a later point
                 on_tick_n.add(game.tick + 60, task)
