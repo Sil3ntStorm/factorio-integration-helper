@@ -772,10 +772,10 @@ Optionally launches multiple projectiles at once.
   Defaults to `1`. Allows to increase the range of projectiles. The range determines how long a projectile
   will be able to remain in the air, flying towards its target. If a projectile has flown for more tiles
   than its range (without hitting its target), it will simply hit the ground at its maximum distance.
-- location: Fixed position to launch a barrage at. If specified the player will be ignored (but still needs
-  to be specified). If specified surface must also be specified. Defaults to `player location`.
 - surface: Surface to use for the fixed location. If location is specified so must the surface.
   Defaults to `player surface`.
+- location: Fixed position to launch a barrage at. If specified the player will be ignored (but still needs
+  to be specified). If specified surface must also be specified. Defaults to `player location`.
 - continue_on_death: Boolean. Whether to keep firing at the last player location upon death, or hold fire
   until the player respawns. Defaults to `true` which will keep firing when the player targeted is dead.
 

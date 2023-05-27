@@ -276,7 +276,7 @@ function player.barrage(player_, itemToSpawn, range, countPerVolley, count, seco
         delay = 0
     end
     if type(homing_count) ~= 'number' then
-        homing_count = math.floor(count * 0.25 + 0.5)
+        homing_count = math.floor(countPerVolley * 0.25 + 0.5)
     end
     if type(randomize_target) ~= 'boolean' then
         randomize_target = true
