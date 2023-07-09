@@ -815,7 +815,7 @@ function map.rain_item(surface, position, entity, item, range, count, duration, 
     task['count'] = count
     task['duration'] = duration
     task['ticks'] = 30
-    task['per_tick'] = math.max(1, count / (duration * 60 / task.ticks))
+    task['per_tick'] = math.ceil(math.max(1, count / (duration * 60 / task.ticks)) - 0.5)
     task['delay'] = math.max(0, delay - 1)
     task['done'] = 0
 
