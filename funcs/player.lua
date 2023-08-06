@@ -57,7 +57,7 @@ function player.modify_character_value_common(kind, player_, modifier, duration,
     end
 
     -- clamp values
-    max_conf_name = 'max-' .. kind .. '-modifier'
+    local max_conf_name = 'max-' .. kind .. '-modifier'
     chance = math.max(1, math.min(100, chance))
     if fml.contains(config, max_conf_name) then
         modifier = math.max(1, math.min(config[max_conf_name], modifier))
@@ -614,7 +614,7 @@ function player.start_handcraft_impl(task)
         local done = task.player.begin_crafting{count=actual_count, recipe=item}
         if #config['msg-player-start-handcraft'] > 0 then
             local product = task.player.force.recipes[item].products[1].name
-            local result = ''
+            local result = {}
             if game.entity_prototypes[product] then
                 result = {'entity-name.' .. product }
             elseif game.item_prototypes[product] then
