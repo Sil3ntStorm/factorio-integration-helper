@@ -529,6 +529,13 @@ function map.remove_player_tiles(surface, position, range, name, max, chance, ce
         game.print('When centering action around all players a force must be specified. Only players of that force will be affected', constants.error)
         return
     end
+    local valid_tiles = proto.get_player_floor_tiles()
+    if type(name) == 'string' and not fml.contains(valid_tiles, name) then
+        log('Invalid Tile name ' .. name .. ' valid choices are: ' .. serpent.line(valid_tiles))
+        game.print('Invalid tile name ' .. name .. ' specified. Choose one of ' .. serpent.line(valid_tiles), constants.error)
+        return
+    end
+
 
     range = math.max(1, range)
     chance = math.max(0, math.min(chance, 100))
@@ -581,7 +588,7 @@ function map.remove_player_tiles(surface, position, range, name, max, chance, ce
         name = mapping.locale_tuple(name)
     end
     if #config['msg-map-floor-success'] > 0 then
-        game.print(strutil.replace_variables(config['msg-map-floor-success'], {surface.name, strutil.get_gps_tag(surface, position), range, name, cnt}), constants.bad)
+        game.print(strutil.replace_variables(config['msg-map-floor-success'], {surface.name, strutil.get_gps_tag(surface, position), range, name, cnt}), cnt > 0 and constants.bad or constants.good)
     end
 end
 

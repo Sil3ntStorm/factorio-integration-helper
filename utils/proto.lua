@@ -73,4 +73,21 @@ function proto.name_for_entity_type(e_type)
     return nil
 end
 
+function proto.get_tile_prototype_names()
+    local res = {}
+    for _, t in pairs(game.tile_prototypes) do
+        table.insert(res, _)
+    end
+    return res
+end
+
+function proto.get_player_floor_tiles()
+    local res = {}
+    local result = game.get_filtered_tile_prototypes({{filter = 'minable'}})
+    for name, _ in pairs(result) do
+        table.insert(res, name)
+    end
+    return res
+end
+
 return proto
