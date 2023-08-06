@@ -76,51 +76,54 @@ of choice and the game. Factorio does provide RCON to interface with the game.
   - [rain\_item](#rain_item)
     - [Parameters](#parameters-21)
     - [Examples](#examples-21)
-  - [modify\_walk\_speed](#modify_walk_speed)
+  - [remove\_floor](#remove_floor)
     - [Parameters](#parameters-22)
     - [Examples](#examples-22)
-  - [modify\_craft\_speed](#modify_craft_speed)
+  - [modify\_walk\_speed](#modify_walk_speed)
     - [Parameters](#parameters-23)
     - [Examples](#examples-23)
-  - [modify\_reach\_distance](#modify_reach_distance)
+  - [modify\_craft\_speed](#modify_craft_speed)
     - [Parameters](#parameters-24)
     - [Examples](#examples-24)
-  - [modify\_build\_distance](#modify_build_distance)
+  - [modify\_reach\_distance](#modify_reach_distance)
     - [Parameters](#parameters-25)
     - [Examples](#examples-25)
-  - [modify\_mining\_speed](#modify_mining_speed)
+  - [modify\_build\_distance](#modify_build_distance)
     - [Parameters](#parameters-26)
     - [Examples](#examples-26)
-  - [on\_fire](#on_fire)
+  - [modify\_mining\_speed](#modify_mining_speed)
     - [Parameters](#parameters-27)
     - [Examples](#examples-27)
-  - [barrage](#barrage)
+  - [on\_fire](#on_fire)
     - [Parameters](#parameters-28)
     - [Examples](#examples-28)
-  - [dump\_inv](#dump_inv)
+  - [barrage](#barrage)
     - [Parameters](#parameters-29)
     - [Examples](#examples-29)
-  - [cancel\_hand\_craft](#cancel_hand_craft)
+  - [dump\_inv](#dump_inv)
     - [Parameters](#parameters-30)
     - [Examples](#examples-30)
-  - [start\_hand\_craft](#start_hand_craft)
+  - [cancel\_hand\_craft](#cancel_hand_craft)
     - [Parameters](#parameters-31)
     - [Examples](#examples-31)
-  - [get\_naked](#get_naked)
+  - [start\_hand\_craft](#start_hand_craft)
     - [Parameters](#parameters-32)
     - [Examples](#examples-32)
-  - [vacuum](#vacuum)
+  - [get\_naked](#get_naked)
     - [Parameters](#parameters-33)
     - [Examples](#examples-33)
-  - [drain\_battery](#drain_battery)
+  - [vacuum](#vacuum)
     - [Parameters](#parameters-34)
     - [Examples](#examples-34)
-  - [drain\_shield](#drain_shield)
+  - [drain\_battery](#drain_battery)
     - [Parameters](#parameters-35)
     - [Examples](#examples-35)
-  - [drain\_energy](#drain_energy)
+  - [drain\_shield](#drain_shield)
     - [Parameters](#parameters-36)
     - [Examples](#examples-36)
+  - [drain\_energy](#drain_energy)
+    - [Parameters](#parameters-37)
+    - [Examples](#examples-37)
 
 ## Available Functions
 
@@ -624,6 +627,32 @@ the location of a specified entity (either biters or players).
 Drop 100 Fish over the course of 5 seconds within 30 tiles of the specified player.
 
 `local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'rain_item', nil, nil, plr, 'raw-fish', 30, 100, 5)
+
+### remove_floor
+
+Removes either the specified, or any if not specified, player place-able floor tiles (Concrete, Stone Brick, etc)
+from the specified position. It will be as if the player manually mined the tiles and whatever was there before
+the floor was placed by the player will be returned.
+
+#### Parameters
+- **surface**: The surface on which to find and remove floor tiles.
+- **position**: The position to center the search on.
+- range: Number of tiles in which to search and remove floor tiles. Defaults to `a random value between 20 and 200`.
+- name: The name of the floor to remove. For example 'stone-path'. Defaults to `all floor tiles`.
+- maximum: At most this many tiles will be removed. Defaults to `a random number between 20 and 200`.
+- chance: Percentage chance of a floor tile to be removed. Defaults to `a random number between 25 and 80`
+- use_all_players: If `true` then it will scan around every player that is on the specified surface, and remove tiles around all of them. Defaults to `false`. Untested. __position is ignored if this is set to true__
+- force: If `use_all_players` is `true` this is the force of which to consider players. __Must be specified if use_all_players is true, ignored otherwise__
+
+#### Examples
+
+Remove up to 100 stone brick floor within 50 tiles around the specified player.
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'remove_floor', plr.surface, plr.position, 50, 'stone-path', 100)`
+
+Remove up to 50 of any kind of floor within 500 tiles around the specified player with a random chance between 50 and 60 percent.
+
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'remove_floor', plr.surface, plr.position, 500, nil, 50, math.random(50, 60))
 
 ### modify_walk_speed
 

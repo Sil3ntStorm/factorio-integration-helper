@@ -461,13 +461,13 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
                         gh.destroy()
                     end
                     cnt = cnt + 1
-                elseif e.destroy({raise_destroy=True}) then
+                elseif e.destroy({raise_destroy=true}) then
                     cnt = cnt + 1
                 else
                     log('Failed to die/destroy entity ' .. e.name .. ' a ' .. e.type .. ' at ' .. serpent.line(e.position))
                 end
             else
-                if e.destroy({raise_destroy=True}) then
+                if e.destroy({raise_destroy=true}) then
                     cnt = cnt + 1
                 else
                     log('Failed to destroy entity ' .. e.name .. ' a ' .. e.type .. ' at ' .. serpent.line(e.position))
@@ -490,6 +490,98 @@ function map.remove_entities(surface, force, position, range, name, max, chance,
         force.print(strutil.replace_variables(config['msg-map-remove-entity-nothing'], {{'entity-name.' .. msg_name}}), constants.neutral)
     elseif #config['msg-map-remove-entity'] > 0 then
         force.print(strutil.replace_variables(config['msg-map-remove-entity'], {cnt, {'entity-name.' .. msg_name}}), cnt > 0 and constants.bad or constants.neutral)
+    end
+end
+
+---@param surface LuaSurface
+---@param position MapPosition
+---@param range double
+---@param name string
+---@param max int
+---@param chance int
+---@param center_around_all_players boolean
+---@param force LuaForce
+function map.remove_player_tiles(surface, position, range, name, max, chance, center_around_all_players, force)
+    if not tc.is_surface(surface) then
+        game.print('surface is required', constants.error)
+        return
+    end
+    if not tc.is_position(position) then
+        position = {x = 0, y = 0}
+    end
+    if type(range) ~= 'number' then
+        range = math.random(20, 200)
+    end
+    if type(max) ~= 'number' then
+        max = math.random(20, 200)
+    end
+    if type(chance) ~= 'number' then
+        chance = math.random(25, 80)
+    end
+    if type(center_around_all_players) ~= 'boolean' then
+        center_around_all_players = false
+    end
+    if type(name) ~= 'nil' and type(name) ~= 'string' then
+        game.print('name must be a string when specified', constants.error)
+        return
+    end
+    if center_around_all_players and not tc.is_force(force) then
+        game.print('When centering action around all players a force must be specified. Only players of that force will be affected', constants.error)
+        return
+    end
+
+    range = math.max(1, range)
+    chance = math.max(0, math.min(chance, 100))
+    max = math.max(1, max)
+
+    ---@param surface LuaSurface
+    ---@param force LuaForce
+    ---@param position MapPosition
+    local function searchLoop(surface, force, range, position, name, center_around_all_players)
+        local found = {}
+        if not center_around_all_players then
+            found = surface.find_tiles_filtered{position = position, radius = range, has_hidden_tile = true, name = name}
+        else
+            for _, lplr in pairs(force.connected_players) do
+                if lplr.surface == surface then
+                    local tmp = surface.find_tiles_filtered{position = position, radius = range, has_hidden_tile = true, name = name}
+                    for _, ent in pairs(tmp) do
+                        table.insert(found, ent)
+                    end
+                end
+            end
+        end
+        return found
+    end
+
+    local found = searchLoop(surface, force, range, position, name, center_around_all_players)
+    log('Remove Floor - Found ' .. #found .. ' tiles within ' .. range .. ' tiles of ' .. serpent.line(position) .. ' on ' .. surface.name .. ' removing at a chance of ' .. chance .. ' at most ' .. max .. ' name = ' .. serpent.line(name))
+    if #found == 0 and #config['msg-map-floor-no-result'] > 0 then
+        game.print(strutil.replace_variables(config['msg-map-floor-no-result'], {surface.name, strutil.get_gps_tag(surface, position), range, name}), constants.neutral)
+        return
+    end
+
+    ---@type Tile[]
+    local replacement_tiles = {}
+    local cnt = 0
+    for _, tile in pairs(found) do
+        if math.random(1, 100) <= chance then
+            table.insert(replacement_tiles, {position = tile.position, name = tile.hidden_tile})
+            cnt = cnt + 1
+        end
+        if cnt >= max then
+            break
+        end
+    end
+
+    surface.set_tiles(replacement_tiles, true, true, true, true)
+    if name == nil then
+        name = 'floor'
+    else
+        name = mapping.locale_tuple(name)
+    end
+    if #config['msg-map-floor-success'] > 0 then
+        game.print(strutil.replace_variables(config['msg-map-floor-success'], {surface.name, strutil.get_gps_tag(surface, position), range, name, cnt}), constants.bad)
     end
 end
 

@@ -27,6 +27,7 @@ function mapping.item_name_overrides()
     local list = {}
     list['atomic-rocket'] = 'atomic-bomb'
     list['se-plague-rocket'] = 'se-plague-bomb'
+    list['stone-path'] = 'stone-brick'
     return list
 end
 

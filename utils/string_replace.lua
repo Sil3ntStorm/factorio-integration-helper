@@ -68,7 +68,7 @@ end
 
 strutil.split = function(str, delim)
     local result = {}
-    string.gsub(str, '([^' .. delim .. ']+)', function (r)
+    local tmp = string.gsub(str, '([^' .. delim .. ']+)', function (r)
         table.insert(result, r)
     end)
     return result

@@ -355,6 +355,24 @@ data:extend({
         default_value = 'Forecasts indicate __2__ raining on __5__ in __7__ seconds'
     },
     {
+        name = 'sil-ihlp-msg-map-floor-no-result',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'fla',
+        default_value = 'No flooring of type __4__ found on __1__ within __3__ meters around __2__'
+    },
+    {
+        name = 'sil-ihlp-msg-map-floor-success',
+        type = 'string-setting',
+        setting_type = 'runtime-global',
+        auto_trim = true,
+        allow_blank = true,
+        order = 'flb',
+        default_value = '__5__ __4__ on __1__ have disappeared __3__ meters around __2__'
+    },
+    {
         name = 'sil-ihlp-msg-player-walk-speed-inc',
         type = 'string-setting',
         setting_type = 'runtime-global',

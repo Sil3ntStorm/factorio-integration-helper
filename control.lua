@@ -578,6 +578,7 @@ local function onLoad()
         load_turrets=map.load_ammunition,
         advance_rocket=map.advance_rocket_silo,
         rain_item=map.rain_item,
+        remove_floor=map.remove_player_tiles,
         modify_walk_speed=fn_player.modify_walk_speed,
         modify_craft_speed=fn_player.modify_craft_speed,
         modify_reach_distance=fn_player.modify_reach_distance,
