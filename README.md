@@ -652,7 +652,7 @@ Remove up to 100 stone brick floor within 50 tiles around the specified player.
 
 Remove up to 50 of any kind of floor within 500 tiles around the specified player with a random chance between 50 and 60 percent.
 
-`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'remove_floor', plr.surface, plr.position, 500, nil, 50, math.random(50, 60))
+`local plr = game.players['foo'] remote.call('silentstorm-integration-helper', 'remove_floor', plr.surface, plr.position, 500, nil, 50, math.random(50, 60))`
 
 ### modify_walk_speed
 
