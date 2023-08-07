@@ -574,6 +574,7 @@ function map.remove_player_tiles(surface, position, range, name, max, chance, ce
     for _, tile in pairs(found) do
         if math.random(1, 100) <= chance then
             table.insert(replacement_tiles, {position = tile.position, name = tile.hidden_tile})
+            surface.set_hidden_tile(tile.position, nil); -- Work around a Factorio Bug that does not clear the hidden_tile flag automatically
             cnt = cnt + 1
         end
         if cnt >= max then
